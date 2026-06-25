@@ -381,18 +381,6 @@
     </div>
   </section>
 
-  <!-- SOUS-MENU : FRACTIONS DÉCIMALES -->
-  <section class="screen" id="scr-choose2">
-    <div class="card">
-      <div class="topbar">
-        <h2 class="title" style="margin:0">Fractions décimales</h2>
-        <button class="btn-link" onclick="show('choose');renderChooser()">Retour</button>
-      </div>
-      <p class="lead">Choisis ton niveau.</p>
-      <div class="choices" id="fracChoices"></div>
-    </div>
-  </section>
-
   <!-- TEST -->
   <section class="screen" id="scr-test">
     <div class="test-top">
@@ -449,8 +437,8 @@
   <!-- TEST : FRACTIONS DÉCIMALES -->
   <section class="screen" id="scr-ftest">
     <div class="test-top">
-      <span class="q-idx" id="fqIdx">Question 1 / 10</span>
-      <span class="score-tag">Réussies&nbsp;<b id="fLiveScore">0</b></span>
+      <span class="q-idx" id="fqIdx">Niveau 1 · Question 1 / 5</span>
+      <span class="score-tag">Niveau&nbsp;<b id="fLiveScore">0/5</b></span>
     </div>
     <div class="card">
       <p class="mp-instr" id="fInstr">Donne la réponse.</p>
@@ -545,8 +533,7 @@
         <div class="setrow"><label for="setMpCount">Nombre de multiplications</label>
           <select id="setMpCount"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>
         <div class="set-h">Fractions décimales</div>
-        <div class="setrow"><label for="setFracCount">Nombre de questions <span class="hint">par niveau</span></label>
-          <select id="setFracCount"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>
+        <p class="note" style="margin:2px 0 0">Parcours fixe : 3 niveaux de 5 questions. Il faut au moins 4 bonnes réponses sur 5 pour débloquer le niveau suivant.</p>
         <div class="row" style="margin-top:18px">
           <button class="btn btn-primary" onclick="saveSettings()">Enregistrer les réglages</button>
           <span class="saved" id="savedMsg">Enregistré ✓</span>
@@ -579,35 +566,32 @@ const test={kind:'cm',questions:[],idx:0,score:0,answers:[],startTime:0,qTimer:n
 const TESTS={
   'calcul-mental':       { name:'Calcul mental',           icon:'🧮', desc:'Additions, soustractions, multiplications… à calculer de tête.', start:()=>startTest() },
   'multiplication-posee':{ name:'Multiplication posée',     icon:'✖️', desc:'Pose la multiplication, complète la retenue et le résultat.',     start:()=>startMultPosee() },
-  'frac-n1':             { name:'Niveau 1 · Fraction → décimal', icon:'①', desc:'Écris la fraction sous forme décimale.',                start:()=>startFrac('frac-n1') },
-  'frac-n2':             { name:'Niveau 2 · Décimal → fraction', icon:'②', desc:'Écris le nombre sous forme de fraction décimale.',     start:()=>startFrac('frac-n2') },
-  'frac-n3':             { name:'Niveau 3 · Multiplier des fractions', icon:'③', desc:'Calcule le produit de deux fractions.',           start:()=>startFrac('frac-n3') }
+  'fractions-decimales': { name:'Fractions décimales',      icon:'🔢', desc:'Parcours en 3 niveaux : 4 bonnes réponses sur 5 pour passer au niveau suivant.', start:()=>startFracParcours() }
 };
-const TEST_ORDER=['calcul-mental','multiplication-posee','frac-n1','frac-n2','frac-n3'];
-const FRAC_LEVELS=['frac-n1','frac-n2','frac-n3'];
-/* Menu élève (regroupe les 3 niveaux de fractions sous une seule carte) */
+const TEST_ORDER=['calcul-mental','multiplication-posee','fractions-decimales'];
+/* Détail des 3 niveaux du parcours « Fractions décimales » */
+const FRAC_INFO={
+  'frac-n1':{name:'Fraction → décimal'},
+  'frac-n2':{name:'Décimal → fraction'},
+  'frac-n3':{name:'Multiplier des fractions'}
+};
+/* Menu élève */
 const MENU=[
   {kind:'test', id:'calcul-mental'},
   {kind:'test', id:'multiplication-posee'},
-  {kind:'group', name:'Fractions décimales', icon:'🔢', desc:'3 niveaux : fraction → décimal, décimal → fraction, multiplications.', open:()=>{ show('choose2'); renderFracChooser(); }}
+  {kind:'test', id:'fractions-decimales'}
 ];
 let teacherFilter='all';
 function pick(a){return a[rand(0,a.length-1)];}
 function testIdOf(r){ const d=r&&r.details; if(d&&!Array.isArray(d)&&d.test) return d.test; return 'calcul-mental'; }
-function testName(id){ return (TESTS[id]&&TESTS[id].name)||'Test'; }
-function restartCurrentTest(){ if(test.kind==='mp') startMultPosee(); else if(test.kind==='frac') startFrac(test.level); else startTest(); }
+function testName(id){ return (TESTS[id]&&TESTS[id].name) || (FRAC_INFO[id]?('Fractions — '+FRAC_INFO[id].name):'Test'); }
+function restartCurrentTest(){ if(test.kind==='mp') startMultPosee(); else if(test.kind==='fracp') startFracParcours(); else startTest(); }
 function cardHTML(icon,title,desc,onclick){
   return `<button class="choice eleve" onclick="${onclick}">
     <span class="ic">${icon}</span><span class="ttl">${esc(title)}</span><span class="ds">${esc(desc)}</span></button>`;
 }
 function renderChooser(){
-  $('testChoices').innerHTML=MENU.map((m,i)=>{
-    if(m.kind==='test'){ const t=TESTS[m.id]; return cardHTML(t.icon,t.name,t.desc,`TESTS['${m.id}'].start()`); }
-    return cardHTML(m.icon,m.name,m.desc,`MENU[${i}].open()`);
-  }).join('');
-}
-function renderFracChooser(){
-  $('fracChoices').innerHTML=FRAC_LEVELS.map(id=>{ const t=TESTS[id]; return cardHTML(t.icon,t.name,t.desc,`TESTS['${id}'].start()`); }).join('');
+  $('testChoices').innerHTML=MENU.map(m=>{ const t=TESTS[m.id]; return cardHTML(t.icon,t.name,t.desc,`TESTS['${m.id}'].start()`); }).join('');
 }
 
 /* ---------- Connexion à Supabase ---------- */
@@ -624,7 +608,7 @@ function show(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   $('scr-'+name).classList.add('on');
   const pill=$('userPill');
-  if((name==='space'||name==='choose'||name==='choose2'||name==='test'||name==='mtest'||name==='ftest'||name==='results') && currentEleve){
+  if((name==='space'||name==='choose'||name==='test'||name==='mtest'||name==='ftest'||name==='results') && currentEleve){
     pill.hidden=false;
     pill.innerHTML=`${esc(currentEleve.prenom)} <button onclick="logout()">Se déconnecter</button>`;
   }else if(name==='teacher'){
@@ -942,19 +926,21 @@ function genFrac(level){
   const ft=f=>f.whole!==undefined?String(f.whole):`${f.n}/${f.d}`;
   return {level,facA,facB,pn,pd,qtext:`${ft(facA)} × ${ft(facB)}`,atext:`${pn}/${pd}`};
 }
-async function startFrac(level){
+async function startFracParcours(){
   if(!currentEleve){ show('login'); renderLoginNames(); return; }
-  cfg=await loadConfig();
-  const n=cfg.fracCount||10;
-  test.kind='frac'; test.level=level;
-  test.questions=Array.from({length:n},()=>genFrac(level));
-  test.idx=0;test.score=0;test.answers=[];test.startTime=Date.now();test.locked=false;
+  test.kind='fracp';
+  test.levels=['frac-n1','frac-n2','frac-n3'];
+  test.perLevel=5; test.passNeeded=4;
+  test.levelIdx=0; test.level=test.levels[0]; test.levelScore=0;
+  test.idx=0; test.score=0; test.answers=[]; test.results=[];
+  test.startTime=Date.now(); test.locked=false;
+  test.questions=Array.from({length:test.perLevel},()=>genFrac(test.level));
   show('ftest'); renderFTest();
 }
 function renderFTest(){
   const q=test.questions[test.idx]; test.locked=false;
-  $('fqIdx').textContent=`Question ${test.idx+1} / ${test.questions.length}`;
-  $('fLiveScore').textContent=test.score;
+  $('fqIdx').textContent=`Niveau ${test.levelIdx+1} · Question ${test.idx+1} / ${test.perLevel}`;
+  $('fLiveScore').textContent=`${test.levelScore}/${test.perLevel}`;
   $('fFeedback').textContent=''; $('fFeedback').className='mp-feedback';
   $('fActions').innerHTML='<button class="btn btn-primary" onclick="checkFAnswer()">Vérifier</button>';
   const fracIn='<span class="f-frac-input"><input class="f-num" id="fNum" type="text" inputmode="numeric" autocomplete="off" aria-label="numérateur"><span class="f-fbar"></span><input class="f-den" id="fDen" type="text" inputmode="numeric" autocomplete="off" aria-label="dénominateur"></span>';
@@ -997,18 +983,71 @@ function checkFAnswer(){
     [eN,eD].forEach(el=>{ el.classList.remove('ok','bad'); el.classList.add(correct?'ok':'bad'); el.disabled=true; });
   }
   test.locked=true;
-  if(correct){ test.score++; $('fLiveScore').textContent=test.score;
+  if(correct){ test.score++; test.levelScore++; $('fLiveScore').textContent=`${test.levelScore}/${test.perLevel}`;
     $('fFeedback').textContent=pick(['Bravo, c\u2019est juste !','Parfait !','Excellent !','Très bien !']); $('fFeedback').className='mp-feedback good';
   } else {
     const extra=q.level==='frac-n3'?' (ou une fraction égale)':'';
     $('fFeedback').textContent=`Réponse : ${q.atext}${extra}`; $('fFeedback').className='mp-feedback bad';
   }
   test.answers.push({q:q.qtext,answer:q.atext,given,correct});
-  const last=test.idx===test.questions.length-1;
-  $('fActions').innerHTML=`<button class="btn btn-primary" id="fNext" onclick="nextFQuestion()">${last?'Voir mes résultats':'Question suivante'}</button>`;
+  const lastInLevel=test.idx===test.perLevel-1;
+  const next = lastInLevel ? 'endLevel()' : 'nextFQuestionParcours()';
+  const label = lastInLevel ? 'Résultat du niveau →' : 'Question suivante';
+  $('fActions').innerHTML=`<button class="btn btn-primary" id="fNext" onclick="${next}">${label}</button>`;
   $('fNext').focus();
 }
-function nextFQuestion(){ if(test.idx<test.questions.length-1){ test.idx++; renderFTest(); } else saveAndShow(test.level); }
+function nextFQuestionParcours(){ test.idx++; renderFTest(); }
+function endLevel(){
+  const passed=test.levelScore>=test.passNeeded, isLast=test.levelIdx===test.levels.length-1;
+  test.results.push({level:test.level,score:test.levelScore,total:test.perLevel,passed});
+  $('fqIdx').textContent=`Niveau ${test.levelIdx+1} terminé`;
+  $('fInstr').innerHTML=`Niveau ${test.levelIdx+1} · ${esc(FRAC_INFO[test.level].name)}`;
+  $('fHost').innerHTML=`<div style="text-align:center;width:100%"><div style="font-family:Fredoka;font-weight:600;font-size:2.6rem;color:${passed?'var(--green)':'var(--red)'}">${test.levelScore} / ${test.perLevel}</div></div>`;
+  if(passed && !isLast){
+    $('fFeedback').textContent=`Niveau réussi ! Tu débloques le niveau ${test.levelIdx+2}.`; $('fFeedback').className='mp-feedback good';
+    $('fActions').innerHTML=`<button class="btn btn-primary" id="fGo" onclick="goNextLevel()">Niveau ${test.levelIdx+2} →</button>`;
+    $('fGo').focus();
+  } else if(passed && isLast){
+    $('fFeedback').textContent='Bravo, tu as réussi tout le parcours !'; $('fFeedback').className='mp-feedback good';
+    $('fActions').innerHTML=`<button class="btn btn-primary" onclick="finishParcours()">Voir mes résultats</button>`;
+  } else {
+    $('fFeedback').textContent=`Il faut au moins ${test.passNeeded} bonnes réponses sur ${test.perLevel} pour débloquer le niveau suivant.`; $('fFeedback').className='mp-feedback bad';
+    $('fActions').innerHTML=`<button class="btn btn-primary" onclick="finishParcours()">Voir mes résultats</button>`;
+  }
+}
+function goNextLevel(){
+  test.levelIdx++; test.level=test.levels[test.levelIdx]; test.levelScore=0; test.idx=0;
+  test.questions=Array.from({length:test.perLevel},()=>genFrac(test.level));
+  renderFTest();
+}
+async function finishParcours(){
+  const total=test.answers.length, score=test.score, pct=total?Math.round(score/total*100):0;
+  const durationSec=(Date.now()-test.startTime)/1000;
+  let reached=0; for(const r of test.results){ if(r.passed) reached++; else break; }
+  const misses=test.answers.filter(a=>!a.correct).map(a=>({q:a.q,donne:a.given,bon:a.answer}));
+  const perLevel=test.results.map(r=>({lvl:r.level,score:r.score,total:r.total,passed:r.passed}));
+  try{ await sb.from('resultats').insert({eleve_id:currentEleve.id,score,total,percent:pct,duration_sec:durationSec,details:{test:'fractions-decimales',reached,perLevel,misses}}); }
+  catch(e){ toast('Résultat non enregistré (connexion)','err'); }
+  const allPassed=test.results.length===test.levels.length && test.results.every(r=>r.passed);
+  $('resultMsg').textContent= allPassed?'Parcours réussi ! 🎉':(reached>0?`Tu as validé le niveau ${reached}`:'Continue à t\u2019entraîner !');
+  $('resultSub').textContent=`${esc(currentEleve.prenom)} • ${fmtDur(durationSec)}`;
+  $('resultScore').textContent=`${score} / ${total}`; $('resultPct').textContent=`${pct} %`;
+  const ul=$('review'); ul.innerHTML='';
+  test.results.forEach((r,i)=>{
+    const li=document.createElement('li'); li.className=r.passed?'ok':'ko';
+    const tail=r.passed?'réussi':`non validé (${test.passNeeded} requis)`;
+    li.innerHTML=`<span class="rmark">${r.passed?'✓':'✗'}</span><span class="exp">Niveau ${i+1} · ${esc(FRAC_INFO[r.level].name)} : ${r.score} / ${r.total}</span><span class="fix">${tail}</span>`;
+    ul.appendChild(li);
+  });
+  for(let i=test.results.length;i<test.levels.length;i++){
+    const li=document.createElement('li'); li.style.opacity='.55';
+    li.innerHTML=`<span class="rmark" style="color:var(--ink-soft)">•</span><span class="exp">Niveau ${i+1} · ${esc(FRAC_INFO[test.levels[i]].name)} : non atteint</span>`;
+    ul.appendChild(li);
+  }
+  const ring=document.querySelector('.score-circle .ring');
+  if(ring){ ring.style.animation='none'; void ring.offsetWidth; ring.style.animation=''; }
+  show('results');
+}
 
 /* ---------- Professeur ---------- */
 function teacherLogin(){
@@ -1149,15 +1188,13 @@ async function loadSettingsIntoForm(){
   $('setAddMax').value=String(c.addSubMax);$('setMulMax').value=String(c.mulMax);
   $('setCount').value=String(c.count);$('setTime').value=String(c.secondsPerQuestion);
   $('setMpCount').value=String(c.mpCount||10);
-  $('setFracCount').value=String(c.fracCount||10);
 }
 async function saveSettings(){
   const valeurs={
     ops:{add:$('opAdd').checked,sub:$('opSub').checked,mul:$('opMul').checked,div:$('opDiv').checked},
     addSubMax:parseInt(val('setAddMax'),10),mulMax:parseInt(val('setMulMax'),10),
     count:parseInt(val('setCount'),10),secondsPerQuestion:parseInt(val('setTime'),10),
-    mpCount:parseInt(val('setMpCount'),10),
-    fracCount:parseInt(val('setFracCount'),10)
+    mpCount:parseInt(val('setMpCount'),10)
   };
   if(!valeurs.ops.add&&!valeurs.ops.sub&&!valeurs.ops.mul&&!valeurs.ops.div){valeurs.ops.add=true;$('opAdd').checked=true;}
   try{
