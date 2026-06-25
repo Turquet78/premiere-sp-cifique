@@ -237,6 +237,23 @@
   .mp-feedback.good{color:var(--green)}.mp-feedback.bad{color:var(--red)}
   .set-h{font-family:"Fredoka";font-weight:600;font-size:1.05rem;margin:20px 0 8px;padding-top:10px;border-top:1px solid var(--line)}
   .set-h.first{border-top:none;padding-top:0;margin-top:2px}
+
+  /* ===== Test 3 : fractions décimales ===== */
+  .f-wrap{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:6px 0}
+  .f-eq{font-family:"Fredoka";font-weight:500;font-size:2rem;color:var(--ink)}
+  .f-times{font-family:"Fredoka";font-weight:500;font-size:1.7rem;color:var(--ink);margin:0 2px}
+  .f-whole,.f-dec-q{font-family:"Fredoka";font-weight:500;font-size:2rem;color:var(--ink)}
+  .fr{display:inline-flex;flex-direction:column;align-items:center;line-height:1}
+  .fr .fn,.fr .fd{font-family:"Fredoka";font-weight:500;font-size:1.7rem;color:var(--ink);padding:1px 9px}
+  .fr .fb{height:3px;align-self:stretch;background:var(--ink);border-radius:2px;margin:3px 0}
+  .f-dec{width:120px;height:50px;text-align:center;font-family:"Fredoka";font-weight:600;font-size:1.6rem;color:var(--blue-dark);background:#F3F7FF;border:2px solid #BBD0F7;border-radius:12px;outline:none}
+  .f-dec:focus{border-color:var(--blue);background:#EAF2FF;box-shadow:0 0 0 4px rgba(43,80,200,.16)}
+  .f-frac-input{display:inline-flex;flex-direction:column;align-items:center;gap:5px}
+  .f-num,.f-den{width:76px;height:46px;text-align:center;font-family:"Fredoka";font-weight:600;font-size:1.5rem;color:var(--blue-dark);background:#F3F7FF;border:2px solid #BBD0F7;border-radius:11px;outline:none}
+  .f-num:focus,.f-den:focus{border-color:var(--blue);background:#EAF2FF;box-shadow:0 0 0 4px rgba(43,80,200,.16)}
+  .f-fbar{width:82px;height:3px;background:var(--ink);border-radius:2px}
+  .f-dec.ok,.f-num.ok,.f-den.ok{color:var(--green);background:var(--green-soft);border-color:#9bdcc1}
+  .f-dec.bad,.f-num.bad,.f-den.bad{color:var(--red);background:var(--red-soft);border-color:#f0b3bb}
 </style>
 
 <div class="wrap">
@@ -364,6 +381,18 @@
     </div>
   </section>
 
+  <!-- SOUS-MENU : FRACTIONS DÉCIMALES -->
+  <section class="screen" id="scr-choose2">
+    <div class="card">
+      <div class="topbar">
+        <h2 class="title" style="margin:0">Fractions décimales</h2>
+        <button class="btn-link" onclick="show('choose');renderChooser()">Retour</button>
+      </div>
+      <p class="lead">Choisis ton niveau.</p>
+      <div class="choices" id="fracChoices"></div>
+    </div>
+  </section>
+
   <!-- TEST -->
   <section class="screen" id="scr-test">
     <div class="test-top">
@@ -413,6 +442,22 @@
       <div class="mp-feedback" id="mpFeedback"></div>
       <div class="row" style="justify-content:center" id="mpActions">
         <button class="btn btn-primary" onclick="checkMAnswer()">Vérifier</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEST : FRACTIONS DÉCIMALES -->
+  <section class="screen" id="scr-ftest">
+    <div class="test-top">
+      <span class="q-idx" id="fqIdx">Question 1 / 10</span>
+      <span class="score-tag">Réussies&nbsp;<b id="fLiveScore">0</b></span>
+    </div>
+    <div class="card">
+      <p class="mp-instr" id="fInstr">Donne la réponse.</p>
+      <div class="mp-stage"><div class="f-wrap" id="fHost"></div></div>
+      <div class="mp-feedback" id="fFeedback"></div>
+      <div class="row" style="justify-content:center" id="fActions">
+        <button class="btn btn-primary" onclick="checkFAnswer()">Vérifier</button>
       </div>
     </div>
   </section>
@@ -499,6 +544,9 @@
         <div class="set-h">Multiplication posée</div>
         <div class="setrow"><label for="setMpCount">Nombre de multiplications</label>
           <select id="setMpCount"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>
+        <div class="set-h">Fractions décimales</div>
+        <div class="setrow"><label for="setFracCount">Nombre de questions <span class="hint">par niveau</span></label>
+          <select id="setFracCount"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>
         <div class="row" style="margin-top:18px">
           <button class="btn btn-primary" onclick="saveSettings()">Enregistrer les réglages</button>
           <span class="saved" id="savedMsg">Enregistré ✓</span>
@@ -523,26 +571,43 @@ function pctClass(p){return p>=70?'hi':p>=50?'mid':'lo';}
 function toast(msg,type){const t=$('toast');t.textContent=msg;t.className='show'+(type?' '+type:'');clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2600);}
 
 /* ---------- État ---------- */
-const DEFAULT_CFG={ops:{add:true,sub:true,mul:true,div:false},addSubMax:20,mulMax:10,count:10,secondsPerQuestion:0,mpCount:10};
+const DEFAULT_CFG={ops:{add:true,sub:true,mul:true,div:false},addSubMax:20,mulMax:10,count:10,secondsPerQuestion:0,mpCount:10,fracCount:10};
 let sb=null, currentEleve=null, selectedEleve=null, cfg=null;
 const test={kind:'cm',questions:[],idx:0,score:0,answers:[],startTime:0,qTimer:null,qDeadline:0,qTotal:0,fbTimer:null,locked:false};
 
 /* ---------- Registre des tests (ajouter un test = une ligne ici) ---------- */
 const TESTS={
-  'calcul-mental':      { name:'Calcul mental',        icon:'🧮', desc:'Additions, soustractions, multiplications… à calculer de tête.', start:()=>startTest() },
-  'multiplication-posee':{ name:'Multiplication posée', icon:'✖️', desc:'Pose la multiplication, complète la retenue et le résultat.',     start:()=>startMultPosee() }
+  'calcul-mental':       { name:'Calcul mental',           icon:'🧮', desc:'Additions, soustractions, multiplications… à calculer de tête.', start:()=>startTest() },
+  'multiplication-posee':{ name:'Multiplication posée',     icon:'✖️', desc:'Pose la multiplication, complète la retenue et le résultat.',     start:()=>startMultPosee() },
+  'frac-n1':             { name:'Niveau 1 · Fraction → décimal', icon:'①', desc:'Écris la fraction sous forme décimale.',                start:()=>startFrac('frac-n1') },
+  'frac-n2':             { name:'Niveau 2 · Décimal → fraction', icon:'②', desc:'Écris le nombre sous forme de fraction décimale.',     start:()=>startFrac('frac-n2') },
+  'frac-n3':             { name:'Niveau 3 · Multiplier des fractions', icon:'③', desc:'Calcule le produit de deux fractions.',           start:()=>startFrac('frac-n3') }
 };
-const TEST_ORDER=['calcul-mental','multiplication-posee'];
+const TEST_ORDER=['calcul-mental','multiplication-posee','frac-n1','frac-n2','frac-n3'];
+const FRAC_LEVELS=['frac-n1','frac-n2','frac-n3'];
+/* Menu élève (regroupe les 3 niveaux de fractions sous une seule carte) */
+const MENU=[
+  {kind:'test', id:'calcul-mental'},
+  {kind:'test', id:'multiplication-posee'},
+  {kind:'group', name:'Fractions décimales', icon:'🔢', desc:'3 niveaux : fraction → décimal, décimal → fraction, multiplications.', open:()=>{ show('choose2'); renderFracChooser(); }}
+];
 let teacherFilter='all';
 function pick(a){return a[rand(0,a.length-1)];}
 function testIdOf(r){ const d=r&&r.details; if(d&&!Array.isArray(d)&&d.test) return d.test; return 'calcul-mental'; }
 function testName(id){ return (TESTS[id]&&TESTS[id].name)||'Test'; }
-function restartCurrentTest(){ if(test.kind==='mp') startMultPosee(); else startTest(); }
+function restartCurrentTest(){ if(test.kind==='mp') startMultPosee(); else if(test.kind==='frac') startFrac(test.level); else startTest(); }
+function cardHTML(icon,title,desc,onclick){
+  return `<button class="choice eleve" onclick="${onclick}">
+    <span class="ic">${icon}</span><span class="ttl">${esc(title)}</span><span class="ds">${esc(desc)}</span></button>`;
+}
 function renderChooser(){
-  $('testChoices').innerHTML=TEST_ORDER.map(id=>{ const t=TESTS[id];
-    return `<button class="choice eleve" onclick="TESTS['${id}'].start()">
-      <span class="ic">${t.icon}</span><span class="ttl">${esc(t.name)}</span><span class="ds">${esc(t.desc)}</span></button>`;
+  $('testChoices').innerHTML=MENU.map((m,i)=>{
+    if(m.kind==='test'){ const t=TESTS[m.id]; return cardHTML(t.icon,t.name,t.desc,`TESTS['${m.id}'].start()`); }
+    return cardHTML(m.icon,m.name,m.desc,`MENU[${i}].open()`);
   }).join('');
+}
+function renderFracChooser(){
+  $('fracChoices').innerHTML=FRAC_LEVELS.map(id=>{ const t=TESTS[id]; return cardHTML(t.icon,t.name,t.desc,`TESTS['${id}'].start()`); }).join('');
 }
 
 /* ---------- Connexion à Supabase ---------- */
@@ -559,7 +624,7 @@ function show(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   $('scr-'+name).classList.add('on');
   const pill=$('userPill');
-  if((name==='space'||name==='choose'||name==='test'||name==='mtest'||name==='results') && currentEleve){
+  if((name==='space'||name==='choose'||name==='choose2'||name==='test'||name==='mtest'||name==='ftest'||name==='results') && currentEleve){
     pill.hidden=false;
     pill.innerHTML=`${esc(currentEleve.prenom)} <button onclick="logout()">Se déconnecter</button>`;
   }else if(name==='teacher'){
@@ -832,6 +897,119 @@ async function finishMTest(){
   showResults({score,total,percent:pct,durationSec});
 }
 
+/* ---------- Sauvegarde générique d'un résultat ---------- */
+async function saveAndShow(testId){
+  const total=test.questions.length,score=test.score,pct=Math.round(score/total*100);
+  const durationSec=(Date.now()-test.startTime)/1000;
+  const misses=test.answers.filter(a=>!a.correct).map(a=>({q:a.q,donne:a.given,bon:a.answer}));
+  try{ await sb.from('resultats').insert({eleve_id:currentEleve.id,score,total,percent:pct,duration_sec:durationSec,details:{test:testId,misses}}); }
+  catch(e){ toast('Résultat non enregistré (connexion)','err'); }
+  showResults({score,total,percent:pct,durationSec});
+}
+
+/* ---------- Test 3 : fractions décimales ---------- */
+function isPow10(x){ if(!Number.isInteger(x)||x<1)return false; while(x%10===0)x/=10; return x===1; }
+function fracToDec(num,d){
+  const k=String(d).length-1, intPart=Math.floor(num/d);
+  let dec=String(num%d).padStart(k,'0').replace(/0+$/,'');
+  return dec ? `${intPart},${dec}` : `${intPart}`;
+}
+function parseDecToFrac(str){
+  let s=String(str).trim().replace(/\s/g,'').replace(',', '.');
+  if(s===''||!(/^\d+(\.\d+)?$/.test(s)||/^\.\d+$/.test(s))) return null;
+  let intp='0',frac='';
+  if(s.includes('.')){ const p=s.split('.'); intp=p[0]||'0'; frac=p[1]||''; } else intp=s;
+  const d=Math.pow(10,frac.length), n=parseInt((intp+frac)||'0',10);
+  return isNaN(n)?null:{n,d};
+}
+function fracBox(n,d){ return `<span class="fr"><span class="fn">${n}</span><span class="fb"></span><span class="fd">${d}</span></span>`; }
+function genFrac(level){
+  if(level==='frac-n1'){
+    const d=pick([10,100,1000]); const maxNum=Math.min(9999,d*100-1);
+    let num; do{ num=rand(1,maxNum); }while(num%d===0 && rand(0,4)!==0);
+    return {level,num,d,qtext:`${num}/${d}`,atext:fracToDec(num,d)};
+  }
+  if(level==='frac-n2'){
+    const k=pick([1,2,3]); let dec=''; for(let i=0;i<k-1;i++)dec+=String(rand(0,9)); dec+=String(rand(1,9));
+    const intPart=rand(0,3), denom=Math.pow(10,k), numer=parseInt(String(intPart)+dec,10);
+    const decString=`${intPart},${dec}`;
+    return {level,decString,numer,denom,qtext:decString,atext:`${numer}/${denom}`};
+  }
+  // frac-n3 : produit de deux facteurs (1 chiffre au numérateur, dénominateur rien/10/100/1000)
+  let da,db; do{ da=pick([1,10,100,1000]); db=pick([1,10,100,1000]); }while(da*db>1000||(da===1&&db===1));
+  const na=rand(1,9), nb=rand(1,9), pn=na*nb, pd=da*db;
+  const facA= da===1?{whole:na}:{n:na,d:da}, facB= db===1?{whole:nb}:{n:nb,d:db};
+  const ft=f=>f.whole!==undefined?String(f.whole):`${f.n}/${f.d}`;
+  return {level,facA,facB,pn,pd,qtext:`${ft(facA)} × ${ft(facB)}`,atext:`${pn}/${pd}`};
+}
+async function startFrac(level){
+  if(!currentEleve){ show('login'); renderLoginNames(); return; }
+  cfg=await loadConfig();
+  const n=cfg.fracCount||10;
+  test.kind='frac'; test.level=level;
+  test.questions=Array.from({length:n},()=>genFrac(level));
+  test.idx=0;test.score=0;test.answers=[];test.startTime=Date.now();test.locked=false;
+  show('ftest'); renderFTest();
+}
+function renderFTest(){
+  const q=test.questions[test.idx]; test.locked=false;
+  $('fqIdx').textContent=`Question ${test.idx+1} / ${test.questions.length}`;
+  $('fLiveScore').textContent=test.score;
+  $('fFeedback').textContent=''; $('fFeedback').className='mp-feedback';
+  $('fActions').innerHTML='<button class="btn btn-primary" onclick="checkFAnswer()">Vérifier</button>';
+  const fracIn='<span class="f-frac-input"><input class="f-num" id="fNum" type="text" inputmode="numeric" autocomplete="off" aria-label="numérateur"><span class="f-fbar"></span><input class="f-den" id="fDen" type="text" inputmode="numeric" autocomplete="off" aria-label="dénominateur"></span>';
+  let instr='', html='';
+  if(q.level==='frac-n1'){
+    instr='Écris cette fraction sous forme <b>décimale</b>.';
+    html=fracBox(q.num,q.d)+'<span class="f-eq">=</span><input class="f-dec" id="fDec" type="text" inputmode="decimal" autocomplete="off" aria-label="réponse décimale">';
+  } else if(q.level==='frac-n2'){
+    instr='Écris ce nombre sous forme de <b>fraction décimale</b>.';
+    html=`<span class="f-dec-q">${esc(q.decString)}</span><span class="f-eq">=</span>`+fracIn;
+  } else {
+    instr='Calcule ce <b>produit</b> (pas besoin de simplifier).';
+    const fa=q.facA.whole!==undefined?`<span class="f-whole">${q.facA.whole}</span>`:fracBox(q.facA.n,q.facA.d);
+    const fb=q.facB.whole!==undefined?`<span class="f-whole">${q.facB.whole}</span>`:fracBox(q.facB.n,q.facB.d);
+    html=fa+'<span class="f-times">×</span>'+fb+'<span class="f-eq">=</span>'+fracIn;
+  }
+  $('fInstr').innerHTML=instr; $('fHost').innerHTML=html;
+  if($('fNum')&&$('fDen')){
+    $('fNum').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();$('fDen').focus();} });
+    $('fDen').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();checkFAnswer();} });
+    setTimeout(()=>$('fNum').focus(),70);
+  } else { const el=$('fDec'); el.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();checkFAnswer();} }); setTimeout(()=>el.focus(),70); }
+}
+function checkFAnswer(){
+  if(test.locked)return;
+  const q=test.questions[test.idx];
+  let correct=false, given=null;
+  if(q.level==='frac-n1'){
+    const el=$('fDec'), v=el.value.trim(), fr=parseDecToFrac(v);
+    given=v===''?null:v.replace('.', ',');
+    correct=!!fr && fr.n*q.d===q.num*fr.d;
+    el.classList.remove('ok','bad'); el.classList.add(correct?'ok':'bad'); el.disabled=true;
+  } else {
+    const eN=$('fNum'), eD=$('fDen');
+    const filled=eN.value.trim()!==''&&eD.value.trim()!=='';
+    const N=parseInt(eN.value.trim(),10), D=parseInt(eD.value.trim(),10);
+    given=filled?`${N}/${D}`:null;
+    if(q.level==='frac-n2') correct=filled&&!isNaN(N)&&!isNaN(D)&&D>0&&isPow10(D)&&N*q.denom===q.numer*D;
+    else correct=filled&&!isNaN(N)&&!isNaN(D)&&D!==0&&N*q.pd===q.pn*D;
+    [eN,eD].forEach(el=>{ el.classList.remove('ok','bad'); el.classList.add(correct?'ok':'bad'); el.disabled=true; });
+  }
+  test.locked=true;
+  if(correct){ test.score++; $('fLiveScore').textContent=test.score;
+    $('fFeedback').textContent=pick(['Bravo, c\u2019est juste !','Parfait !','Excellent !','Très bien !']); $('fFeedback').className='mp-feedback good';
+  } else {
+    const extra=q.level==='frac-n3'?' (ou une fraction égale)':'';
+    $('fFeedback').textContent=`Réponse : ${q.atext}${extra}`; $('fFeedback').className='mp-feedback bad';
+  }
+  test.answers.push({q:q.qtext,answer:q.atext,given,correct});
+  const last=test.idx===test.questions.length-1;
+  $('fActions').innerHTML=`<button class="btn btn-primary" id="fNext" onclick="nextFQuestion()">${last?'Voir mes résultats':'Question suivante'}</button>`;
+  $('fNext').focus();
+}
+function nextFQuestion(){ if(test.idx<test.questions.length-1){ test.idx++; renderFTest(); } else saveAndShow(test.level); }
+
 /* ---------- Professeur ---------- */
 function teacherLogin(){
   if(val('teacherPass')!==MOT_DE_PASSE_PROF){ toast('Mot de passe incorrect','err'); $('teacherPass').value=''; return; }
@@ -971,13 +1149,15 @@ async function loadSettingsIntoForm(){
   $('setAddMax').value=String(c.addSubMax);$('setMulMax').value=String(c.mulMax);
   $('setCount').value=String(c.count);$('setTime').value=String(c.secondsPerQuestion);
   $('setMpCount').value=String(c.mpCount||10);
+  $('setFracCount').value=String(c.fracCount||10);
 }
 async function saveSettings(){
   const valeurs={
     ops:{add:$('opAdd').checked,sub:$('opSub').checked,mul:$('opMul').checked,div:$('opDiv').checked},
     addSubMax:parseInt(val('setAddMax'),10),mulMax:parseInt(val('setMulMax'),10),
     count:parseInt(val('setCount'),10),secondsPerQuestion:parseInt(val('setTime'),10),
-    mpCount:parseInt(val('setMpCount'),10)
+    mpCount:parseInt(val('setMpCount'),10),
+    fracCount:parseInt(val('setFracCount'),10)
   };
   if(!valeurs.ops.add&&!valeurs.ops.sub&&!valeurs.ops.mul&&!valeurs.ops.div){valeurs.ops.add=true;$('opAdd').checked=true;}
   try{
