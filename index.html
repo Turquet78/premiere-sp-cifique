@@ -1,0 +1,1369 @@
+<!-- Calcul mental — version "comptes à l'année" (base de données Supabase). -->
+<!-- ========================================================================= -->
+<!--  ⚙️  À CONFIGURER : remplace les 3 valeurs ci-dessous (voir le guide).     -->
+<!--      Elles se trouvent dans Supabase > Project Settings > API.            -->
+<!-- ========================================================================= -->
+<script>
+  const SUPABASE_URL      = "https://rcxenttecucvcebjlmcw.supabase.co/rest";   // ← ton URL de projet (nouveau projet Supabase terminale)
+  const SUPABASE_ANON_KEY = "sb_publishable_lhXHUAI-GbOEEzZvrhk2gQ_QhS_5MMm";              // ← ta clé "anon public"
+  const MOT_DE_PASSE_PROF = "2709";                          // ← le mot de passe de ton tableau de bord
+</script>
+<!-- ========================================================================= -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maths Terminale — comptes de la classe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root{
+    --paper:#F7F6F1; --grid:#CBD8EC; --ink:#1E2A4A; --ink-soft:#5C668A;
+    --blue:#2B50C8; --blue-dark:#1E3CA0;
+    --green:#1FA971; --green-soft:#E4F5EE;
+    --red:#E23D52; --red-soft:#FCE7EA;
+    --gold:#F2A93B;
+    --slate:#2E4039; --slate-2:#26352D; --chalk:#F4F3EC; --chalk-soft:#AFC0B5;
+    --line:#E6E3D8; --surface:#FFFFFF;
+    --radius:20px;
+    --shadow:0 14px 34px rgba(30,42,74,.10), 0 3px 10px rgba(30,42,74,.06);
+    --shadow-sm:0 4px 14px rgba(30,42,74,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Nunito",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--ink); background-color:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px; background-position:-1px -1px;
+    -webkit-font-smoothing:antialiased; min-height:100dvh; line-height:1.5;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:26px 20px 60px}
+
+  .mast{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .mast .logo{width:42px;height:42px;border-radius:12px;background:var(--blue);display:grid;place-items:center;color:#fff;font-family:"Fredoka";font-weight:700;font-size:24px;box-shadow:var(--shadow-sm);flex:none}
+  .mast h1{font-family:"Fredoka";font-weight:600;font-size:1.35rem;margin:0;letter-spacing:.2px}
+  .mast .sub{margin:0;color:var(--ink-soft);font-size:.86rem;font-weight:600}
+  .mast .spacer{flex:1}
+  .pill{font-family:"Fredoka";font-weight:500;font-size:.82rem;color:var(--blue-dark);background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;display:inline-flex;align-items:center;gap:8px}
+  .pill button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font:inherit;padding:0 0 0 4px;border-left:1px solid var(--line);margin-left:4px}
+  .pill button:hover{color:var(--red)}
+
+  .screen{display:none;animation:rise .35s ease both}
+  .screen.on{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px}
+  h2.title{font-family:"Fredoka";font-weight:600;font-size:1.5rem;margin:0 0 6px}
+  p.lead{color:var(--ink-soft);margin:0 0 22px;font-weight:600}
+  .muted{color:var(--ink-soft);font-weight:600}
+
+  .btn{font-family:"Fredoka";font-weight:600;font-size:1rem;cursor:pointer;border:none;border-radius:14px;padding:13px 22px;transition:transform .12s ease,box-shadow .12s ease,background .15s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--blue);color:#fff;box-shadow:0 6px 0 var(--blue-dark)}
+  .btn-primary:hover{background:#3158d6}
+  .btn-primary:active{box-shadow:0 2px 0 var(--blue-dark);transform:translateY(3px)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn-ghost:hover{border-color:#cdd3e0}
+  .btn-link{background:none;border:none;color:var(--blue-dark);font-weight:700;font-family:"Nunito";cursor:pointer;font-size:.92rem;padding:8px}
+  .btn-link:hover{text-decoration:underline}
+  .btn-danger{background:#fff;color:var(--red);border:1.5px solid #f2c6cd}
+  .btn-danger:hover{background:var(--red-soft)}
+  .btn-sm{padding:8px 14px;font-size:.9rem;border-radius:11px}
+  .btn:focus-visible,input:focus-visible,select:focus-visible,.choice:focus-visible,.chip:focus-visible{outline:3px solid #b9c6f5;outline-offset:2px}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+  .choice{text-align:left;cursor:pointer;background:#fff;border:2px solid var(--line);border-radius:18px;padding:22px;transition:transform .14s,border-color .14s,box-shadow .14s;display:flex;flex-direction:column;gap:8px;font:inherit;color:inherit}
+  .choice:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+  .choice .ic{font-size:30px;line-height:1}
+  .choice .ttl{font-family:"Fredoka";font-weight:600;font-size:1.18rem}
+  .choice .ds{color:var(--ink-soft);font-size:.88rem;font-weight:600}
+  .choice.eleve{border-color:#c9d4f3}.choice.eleve:hover{border-color:var(--blue)}
+  .choice.prof{border-color:#cfe6db}.choice.prof:hover{border-color:var(--green)}
+
+  .field{margin:0 0 14px}
+  label.lab{display:block;font-weight:700;margin:0 0 7px;font-size:.95rem}
+  .text-input{width:100%;font-family:"Fredoka";font-weight:500;font-size:1.15rem;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:13px 15px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .note{color:var(--ink-soft);font-size:.85rem;font-weight:600;margin-top:10px}
+
+  .seg{display:inline-flex;background:#f0eee5;border-radius:12px;padding:4px;margin-bottom:18px;gap:4px}
+  .seg button{font-family:"Fredoka";font-weight:500;border:none;background:none;cursor:pointer;padding:8px 16px;border-radius:9px;color:var(--ink-soft)}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+  #modeSeg{display:flex;flex-wrap:wrap;max-width:100%}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:6px}
+  .chip{font-family:"Fredoka";font-weight:500;cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;font-size:1rem;color:var(--ink)}
+  .chip:hover{border-color:#cdd3e0}
+  .chip.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .pin-input{width:170px;text-align:center;letter-spacing:.4em;font-family:"Fredoka";font-weight:600;font-size:1.5rem;border:1.5px solid var(--line);border-radius:13px;padding:11px 12px;background:#fff;color:var(--ink)}
+
+  .hello{font-family:"Fredoka";font-weight:600;font-size:1.7rem;margin:0 0 2px}
+  .stats{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap}
+  .stat{flex:1;min-width:110px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px}
+  .stat .k{color:var(--ink-soft);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.4px}
+  .stat .v{font-family:"Fredoka";font-weight:700;font-size:1.7rem;line-height:1.1;margin-top:4px}
+  .stat.green .v{color:var(--green)} .stat.gold .v{color:var(--gold)} .stat.blue .v{color:var(--blue)}
+
+  .panel{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
+  .panel h3{font-family:"Fredoka";font-weight:600;font-size:1.05rem;margin:0 0 10px}
+  .chart{width:100%;height:auto;display:block}
+
+  .histlist{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+  .histlist li{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:11px;padding:9px 13px;font-weight:600;font-size:.95rem}
+  .histlist li .d{color:var(--ink-soft)}
+  .histlist li .sc{margin-left:auto;font-family:"Fredoka";font-weight:600}
+  .badge{display:inline-block;font-family:"Fredoka";font-weight:600;font-size:.85rem;padding:3px 10px;border-radius:999px}
+  .badge.hi{background:var(--green-soft);color:#157a52}
+  .badge.mid{background:#fdf3e0;color:#b9791b}
+  .badge.lo{background:var(--red-soft);color:#bf2c3e}
+
+  .test-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-family:"Fredoka";font-weight:500}
+  .test-top .q-idx{color:var(--ink-soft)}
+  .score-tag{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:6px 14px}
+  .score-tag b{color:var(--green);font-weight:700}
+  .ardoise{position:relative;border-radius:18px;padding:38px 24px;text-align:center;background:radial-gradient(120% 120% at 30% 20%,#36493f 0%,var(--slate) 55%,var(--slate-2) 100%);box-shadow:inset 0 0 0 7px rgba(244,243,236,.10),inset 0 0 0 9px rgba(0,0,0,.25),var(--shadow);border:2px solid #1c2a23}
+  .ardoise .equation{font-family:"Fredoka";font-weight:500;color:var(--chalk);font-size:clamp(2.4rem,9vw,4.4rem);letter-spacing:2px;text-shadow:0 1px 0 rgba(0,0,0,.3)}
+  .ardoise .equation .blank{color:var(--chalk-soft)}
+  .answer-zone{position:relative;margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .answer-input{width:min(260px,80%);text-align:center;font-family:"Fredoka";font-weight:600;font-size:2.4rem;color:var(--ink);background:transparent;border:none;border-bottom:3px solid var(--blue);padding:6px 8px 10px;caret-color:var(--blue)}
+  .answer-input::placeholder{color:#c2c7d6}
+  .answer-input:focus{outline:none;border-bottom-color:var(--blue-dark)}
+  .answer-input.good{border-bottom-color:var(--green);color:var(--green)}
+  .answer-input.bad{border-bottom-color:var(--red);color:var(--red)}
+  .mark{position:absolute;top:-6px;right:max(8%,18px);font-family:"Fredoka";font-weight:700;font-size:3.2rem;opacity:0;pointer-events:none}
+  .mark.show{animation:stamp .45s cubic-bezier(.2,1.4,.4,1) forwards}
+  .mark.good{color:var(--green)}.mark.bad{color:var(--red)}
+  @keyframes stamp{0%{opacity:0;transform:scale(.4) rotate(-18deg)}60%{opacity:1;transform:scale(1.15) rotate(-8deg)}100%{opacity:1;transform:scale(1) rotate(-8deg)}}
+  .correction{min-height:26px;font-weight:700;color:var(--red);text-align:center}
+  .timerbar{height:8px;width:min(260px,80%);background:#eceadf;border-radius:999px;overflow:hidden;margin:2px auto 0}
+  .timerbar>i{display:block;height:100%;background:var(--gold);border-radius:999px;transition:width .25s linear}
+  .timerbar.low>i{background:var(--red)}
+
+  .result-head{text-align:center;margin-bottom:18px}
+  .result-head h2{font-family:"Fredoka";font-weight:600;font-size:1.7rem;margin:0 0 4px}
+  .result-head p{margin:0;color:var(--ink-soft);font-weight:600}
+  .score-circle{position:relative;width:170px;height:130px;margin:8px auto 4px}
+  .score-circle svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .score-circle .ring{fill:none;stroke:var(--red);stroke-width:5;stroke-linecap:round;stroke-dasharray:430;stroke-dashoffset:430;animation:draw 1s ease .25s forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .score-circle .val{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .score-circle .big{font-family:"Fredoka";font-weight:700;font-size:2.6rem;line-height:1}
+  .score-circle .pct{color:var(--ink-soft);font-weight:700;font-size:.95rem;margin-top:2px}
+  .review{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:8px}
+  .review li{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;font-family:"Fredoka";font-weight:500}
+  .review li .rmark{font-weight:700;font-size:1.2rem;width:22px;text-align:center;flex:none}
+  .review li.ok .rmark{color:var(--green)}.review li.ko .rmark{color:var(--red)}
+  .review li .exp{font-size:1.05rem}
+  .review li .fix{margin-left:auto;color:var(--red);font-weight:600;font-size:.92rem;font-family:"Nunito"}
+
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .tab{font-family:"Fredoka";font-weight:500;cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:9px 18px;color:var(--ink-soft);font-size:.95rem}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tab:hover:not(.on){border-color:#cdd3e0;color:var(--ink)}
+  .tpane{display:none}.tpane.on{display:block}
+  .tbl{width:100%;border-collapse:collapse;background:#fff;border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+  .tbl th,.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:.95rem}
+  .tbl th{font-family:"Fredoka";font-weight:500;color:var(--ink-soft);background:#fbfaf6;font-size:.8rem;text-transform:uppercase;letter-spacing:.3px}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tr.clickable{cursor:pointer}.tbl tr.clickable:hover td{background:#fbfaf6}
+  .tbl td.name{font-weight:700}
+  .empty{text-align:center;color:var(--ink-soft);font-weight:600;padding:34px 10px;background:#fff;border:1.5px dashed var(--line);border-radius:14px}
+  .toggles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 18px}
+  .toggle{display:flex;align-items:center;gap:11px;background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:12px 14px;cursor:pointer}
+  .toggle input{width:20px;height:20px;accent-color:var(--blue);cursor:pointer}
+  .toggle .tl{font-family:"Fredoka";font-weight:500}
+  .toggle .op{display:inline-block;width:26px;color:var(--blue);font-weight:700;font-family:"Fredoka";text-align:center}
+  .setrow{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .setrow:last-of-type{border-bottom:none}
+  .setrow label{font-weight:700}
+  .setrow .hint{display:block;color:var(--ink-soft);font-weight:600;font-size:.82rem;margin-top:2px}
+  select{font-family:"Fredoka";font-weight:500;font-size:1rem;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;color:var(--ink);width:100%}
+  .saved{color:var(--green);font-weight:700;font-size:.9rem;opacity:0;transition:opacity .2s}.saved.show{opacity:1}
+  .roster{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+  .roster li{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;flex-wrap:wrap}
+  .roster li .av{width:32px;height:32px;border-radius:50%;background:#e9eefb;color:var(--blue-dark);display:grid;place-items:center;font-family:"Fredoka";font-weight:600;flex:none}
+  .roster li .nm{font-weight:700}
+  .roster li .code{font-family:"Fredoka";color:var(--ink-soft);font-size:.9rem;background:#f4f3ec;padding:2px 9px;border-radius:8px}
+  .roster li .acts{margin-left:auto;display:flex;gap:6px}
+  .add-form{display:grid;grid-template-columns:1fr 130px auto;gap:10px;margin-bottom:16px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+
+  .setup-steps{counter-reset:s;list-style:none;padding:0;margin:8px 0 0;display:grid;gap:12px}
+  .setup-steps li{position:relative;padding-left:42px;font-weight:600}
+  .setup-steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-2px;width:28px;height:28px;background:var(--blue);color:#fff;border-radius:50%;display:grid;place-items:center;font-family:"Fredoka";font-weight:600}
+  code.inline{background:#f4f3ec;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em}
+
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-weight:700;padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:90vw;text-align:center;z-index:50}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{background:var(--red)} #toast.ok{background:var(--green)}
+
+  @media (max-width:560px){
+    .choices{grid-template-columns:1fr}
+    .toggles{grid-template-columns:1fr}
+    .setrow{grid-template-columns:1fr 120px}
+    .add-form{grid-template-columns:1fr 1fr}
+    .card{padding:20px}
+    .tbl th:nth-child(4),.tbl td:nth-child(4){display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+
+  /* ===== Test 2 : multiplication posée ===== */
+  .mp-instr{font-weight:700;text-align:center;margin:0 0 16px;font-size:.98rem}
+  .mp-instr b{color:var(--red)}
+  .mp-stage{display:flex;justify-content:center;padding:22px 8px 14px;border-radius:18px;border:1.5px solid var(--line);
+    background-color:#fff;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:30px 30px;background-position:-1px -1px}
+  .mp-op{display:flex;flex-direction:column;align-items:flex-end}
+  .mp-row,.mp-lrow{display:flex;align-items:center}
+  .mp-cl{width:52px;height:52px;display:flex;align-items:center;justify-content:center;position:relative}
+  .mp-cl.op{width:34px}
+  .mp-digit{font-family:"Fredoka";font-weight:500;font-size:2rem;color:var(--ink)}
+  .mp-sign{font-family:"Fredoka";font-weight:500;font-size:1.8rem;color:var(--ink)}
+  .mp-line{height:4px;width:156px;background:var(--ink);border-radius:3px;margin:5px 0}
+  .mp-box{width:44px;height:44px;text-align:center;font-family:"Fredoka";font-weight:600;font-size:1.7rem;color:var(--blue-dark);
+    background:#F3F7FF;border:2px solid #BBD0F7;border-radius:11px;outline:none;padding:0;-moz-appearance:textfield}
+  .mp-box::-webkit-outer-spin-button,.mp-box::-webkit-inner-spin-button,.mp-carry::-webkit-outer-spin-button,.mp-carry::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .mp-box:focus{border-color:var(--blue);background:#EAF2FF;box-shadow:0 0 0 4px rgba(43,80,200,.16)}
+  .mp-carry{width:32px;height:32px;text-align:center;font-family:"Fredoka";font-weight:600;font-size:1.2rem;color:var(--red);
+    background:var(--red-soft);border:2px dashed #f0b3bb;border-radius:9px;outline:none;padding:0;-moz-appearance:textfield}
+  .mp-carry:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(226,61,82,.16)}
+  .mp-box.ok,.mp-carry.ok{color:var(--green);background:var(--green-soft);border-color:#9bdcc1;border-style:solid}
+  .mp-box.bad,.mp-carry.bad{color:var(--red);background:var(--red-soft);border-color:#f0b3bb;border-style:solid}
+  .mp-tag{position:absolute;top:-8px;right:-2px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;font-family:"Nunito"}
+  .mp-tag.ok{background:var(--green)}.mp-tag.bad{background:var(--red)}
+  .mp-fix{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-family:"Fredoka";font-weight:600;font-size:.8rem;color:var(--green)}
+  .mp-feedback{min-height:26px;text-align:center;font-family:"Fredoka";font-weight:500;font-size:1.05rem;margin:16px 0 2px}
+  .mp-feedback.good{color:var(--green)}.mp-feedback.bad{color:var(--red)}
+  .set-h{font-family:"Fredoka";font-weight:600;font-size:1.05rem;margin:20px 0 8px;padding-top:10px;border-top:1px solid var(--line)}
+  .set-h.first{border-top:none;padding-top:0;margin-top:2px}
+
+  /* ===== Test 3 : fractions décimales ===== */
+  .f-wrap{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:6px 0}
+  .f-eq{font-family:"Fredoka";font-weight:500;font-size:2rem;color:var(--ink)}
+  .f-times{font-family:"Fredoka";font-weight:500;font-size:1.7rem;color:var(--ink);margin:0 2px}
+  .f-whole,.f-dec-q{font-family:"Fredoka";font-weight:500;font-size:2rem;color:var(--ink)}
+  .fr{display:inline-flex;flex-direction:column;align-items:center;line-height:1}
+  .fr .fn,.fr .fd{font-family:"Fredoka";font-weight:500;font-size:1.7rem;color:var(--ink);padding:1px 9px}
+  .fr .fb{height:3px;align-self:stretch;background:var(--ink);border-radius:2px;margin:3px 0}
+  .f-dec{width:120px;height:50px;text-align:center;font-family:"Fredoka";font-weight:600;font-size:1.6rem;color:var(--blue-dark);background:#F3F7FF;border:2px solid #BBD0F7;border-radius:12px;outline:none}
+  .f-dec:focus{border-color:var(--blue);background:#EAF2FF;box-shadow:0 0 0 4px rgba(43,80,200,.16)}
+  .f-frac-input{display:inline-flex;flex-direction:column;align-items:center;gap:5px}
+  .f-num,.f-den{width:76px;height:46px;text-align:center;font-family:"Fredoka";font-weight:600;font-size:1.5rem;color:var(--blue-dark);background:#F3F7FF;border:2px solid #BBD0F7;border-radius:11px;outline:none}
+  .f-num:focus,.f-den:focus{border-color:var(--blue);background:#EAF2FF;box-shadow:0 0 0 4px rgba(43,80,200,.16)}
+  .f-fbar{width:82px;height:3px;background:var(--ink);border-radius:2px}
+  .f-dec.ok,.f-num.ok,.f-den.ok{color:var(--green);background:var(--green-soft);border-color:#9bdcc1}
+  .f-dec.bad,.f-num.bad,.f-den.bad{color:var(--red);background:var(--red-soft);border-color:#f0b3bb}
+  /* Niveau 5 : multiplication de décimaux, 2 étapes */
+  .f5{display:flex;flex-direction:column;gap:16px;width:100%;align-items:center}
+  .f5-prod{font-family:"Fredoka";font-weight:600;font-size:2rem;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .f5-step{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+  .f5-lab{font-family:"Nunito";font-weight:700;font-size:.95rem;color:var(--ink-soft);text-align:center}
+  .f5-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
+  /* ===== Modes entraînement / évaluation ===== */
+  .mode-tag{font-family:"Fredoka";font-weight:600;font-size:.8rem;padding:4px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
+  .mode-tag.train{color:var(--blue-dark);background:#EAF1FF;border:1.5px solid #c9d8fb}
+  .mode-tag.eval{color:#a8631c;background:#FCEFD8;border:1.5px solid #f1d199}
+  .mode-tag.soutien{color:#1f7a6b;background:#E3F6F1;border:1.5px solid #a9e3d6}
+  #pauseBtn{position:fixed;right:16px;bottom:16px;z-index:60;border:none;cursor:pointer;
+    background:#5a4632;color:#fff;font-family:Fredoka,sans-serif;font-weight:600;font-size:.95rem;
+    padding:11px 16px;border-radius:30px;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+  #pauseBtn:active{transform:translateY(1px)}
+  #scr-test,#scr-mtest,#scr-ftest,#scr-ptest,#scr-mdtest,#scr-utest,#scr-atest,#scr-dtest{padding-bottom:84px}
+  #aHost .f-num,#aHost .f-den{width:94px} #aHost .f-dec{width:130px}
+  #dHost .f-num,#dHost .f-den{width:94px} #dHost .f-dec{width:130px}
+  .step-hidden{display:none}
+  .resume-flag{display:block;margin-top:6px;color:#1f7a6b;font-weight:700;font-size:.82rem}
+  .choice.resume{border-color:#5cc4ad;background:linear-gradient(180deg,#F0FBF8,#fff)}
+  .lock-card{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;flex-wrap:wrap}
+  .lock-card .li{font-family:"Fredoka";font-weight:600;font-size:1.05rem;flex:1;min-width:140px}
+  .lock-card .st{font-family:"Fredoka";font-weight:600;font-size:.82rem;padding:4px 11px;border-radius:999px}
+  .lock-card .st.open{color:#157a52;background:var(--green-soft)}
+  .lock-card .st.closed{color:#8a6d12;background:#FCEFD8}
+  .lock-card.open{border-color:#9bdcc1;background:#F4FBF8}
+  .choice.locked{opacity:.6;cursor:not-allowed}
+  .choice.locked:hover{transform:none;box-shadow:none;border-color:var(--line)}
+  .choice .lockmsg{font-size:.82rem;color:#a8631c;font-weight:700;margin-top:2px}
+
+  /* ===== Test 4 : pourcentage d'un nombre (3 étapes) ===== */
+  .pt-step{width:100%;margin:4px 0 16px}
+  .pt-lab{font-family:"Nunito";font-weight:800;font-size:.9rem;color:var(--ink-soft);margin-bottom:9px;text-align:center}
+  .pt-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+  .pt-opt{position:relative;border:2px dashed #c2cdf2;background:#fafbff;border-radius:16px;padding:30px 14px 14px;margin:6px 0 18px}
+  .pt-opt .pt-lab{margin-top:2px}
+  .pt-opt::before{content:"✦ Facultatif";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:"Fredoka";font-weight:600;font-size:.74rem;color:var(--blue-dark);background:#fff;border:1.5px solid #c2cdf2;border-radius:999px;padding:3px 13px;white-space:nowrap}
+  /* étape 2 du test « nombres en 1,… » : pose compacte (tient en 3×3 sur mobile) */
+  .u-mul .mp-cl{width:38px;height:40px}
+  .u-mul .mp-cl.op{width:24px}
+  .u-mul .mp-digit{font-size:1.55rem}
+  .u-mul .mp-sign{font-size:1.4rem}
+  .u-mul .mp-box{width:32px;height:36px;font-size:1.35rem;border-radius:8px}
+  .u-mul .mp-carry{width:26px;height:28px;font-size:1rem;border-radius:7px}
+  .u-mul .mp-tag{width:16px;height:16px;font-size:10px;top:-7px}
+  .u-mul .mp-fix{font-size:.68rem;bottom:-13px}
+
+/* --- Aide à la saisie (dérivées) + invite f'(x) --- */
+.equation .ask{display:block;margin-top:10px;font-size:.5em;color:var(--chalk-soft);font-weight:600;letter-spacing:.02em;}
+.expr-help{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:2px 0 10px;}
+.expr-help button{font-family:'Fredoka',sans-serif;font-size:1.05rem;min-width:46px;padding:9px 12px;border:2px solid var(--line);background:var(--surface);border-radius:12px;cursor:pointer;color:var(--ink);font-weight:600;line-height:1;box-shadow:var(--shadow-sm);}
+.expr-help button:active{transform:translateY(1px);}
+.expr-help button.del{color:var(--red);border-color:var(--red-soft);}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="logo">ƒ</div>
+    <div>
+      <h1>Maths Terminale</h1>
+      <p class="sub">Tous les exercices de la classe, toute l'année</p>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill" id="userPill" hidden></span>
+  </header>
+
+  <!-- À CONFIGURER -->
+  <section class="screen" id="scr-setup">
+    <div class="card">
+      <h2 class="title">Presque prêt — configuration à terminer</h2>
+      <p class="lead">L'application n'est pas encore reliée à ta base de données.</p>
+      <ol class="setup-steps">
+        <li>Crée un compte gratuit sur <code class="inline">supabase.com</code> et un nouveau projet.</li>
+        <li>Dans <b>SQL Editor</b>, colle le contenu du fichier <code class="inline">schema.sql</code> et clique sur <b>Run</b>.</li>
+        <li>Dans <b>Project Settings → API</b>, copie l'<b>URL</b> et la clé <b>anon public</b>.</li>
+        <li>Ouvre ce fichier <code class="inline">.html</code> et colle-les tout en haut, à la place de <code class="inline">VOTRE-PROJET</code> et <code class="inline">VOTRE-CLE-ANON-PUBLIC</code>.</li>
+        <li>Choisis aussi un mot de passe professeur, puis enregistre et rouvre la page.</li>
+      </ol>
+      <p class="note">Le guide pas-à-pas détaillé est fourni à côté de ce fichier.</p>
+    </div>
+  </section>
+
+  <!-- ACCUEIL -->
+  <section class="screen" id="scr-home">
+    <div class="card">
+      <h2 class="title">Bienvenue</h2>
+      <p class="lead">Choisis ton rôle pour commencer.</p>
+      <div class="choices">
+        <button class="choice eleve" onclick="show('login');renderLoginNames()">
+          <span class="ic">✏️</span><span class="ttl">Je suis élève</span>
+          <span class="ds">Je me connecte et je choisis un test.</span>
+        </button>
+        <button class="choice prof" onclick="show('teacher-login');setTimeout(()=>$('teacherPass').focus(),100)">
+          <span class="ic">📋</span><span class="ttl">Je suis le professeur</span>
+          <span class="ds">Je gère les comptes et je suis la progression.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONNEXION ÉLÈVE -->
+  <section class="screen" id="scr-login">
+    <div class="card">
+      <h2 class="title">Espace élève</h2>
+      <div class="seg">
+        <button id="segCo" class="on" onclick="loginMode('co')">Se connecter</button>
+        <button id="segCr" onclick="loginMode('cr')">Créer mon compte</button>
+      </div>
+
+      <div id="modeCo">
+        <label class="lab">Choisis ton prénom</label>
+        <div class="chips" id="nameChips"></div>
+        <div id="pinRow" hidden style="margin-top:14px">
+          <label class="lab" for="loginPin">Ton code à 4 chiffres</label>
+          <div class="row">
+            <input class="pin-input" id="loginPin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+            <button class="btn btn-primary" onclick="connexionEleve()">Entrer</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="modeCr" hidden>
+        <div class="field">
+          <label class="lab" for="newPrenom">Ton prénom</label>
+          <input class="text-input" id="newPrenom" maxlength="24" placeholder="Ex. : Léa" autocomplete="off">
+        </div>
+        <div class="row" style="align-items:flex-start">
+          <div class="field" style="flex:1;min-width:140px">
+            <label class="lab" for="newPin">Choisis un code (4 chiffres)</label>
+            <input class="text-input" id="newPin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+          </div>
+          <div class="field" style="flex:1;min-width:140px">
+            <label class="lab" for="newPin2">Retape ton code</label>
+            <input class="text-input" id="newPin2" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="creerCompte()">Créer mon compte</button>
+        <p class="note">Choisis un code facile à retenir. En cas d'oubli, ton professeur peut le réinitialiser.</p>
+      </div>
+
+      <div style="margin-top:16px"><button class="btn-link" onclick="show('home')">Retour</button></div>
+    </div>
+  </section>
+
+  <!-- ESPACE ÉLÈVE -->
+  <section class="screen" id="scr-space">
+    <div class="card">
+      <h2 class="hello" id="spaceHello">Bonjour !</h2>
+      <p class="muted" id="spaceSub"></p>
+      <div class="stats">
+        <div class="stat blue"><div class="k">Tests passés</div><div class="v" id="sNb">0</div></div>
+        <div class="stat green"><div class="k">Moyenne</div><div class="v" id="sAvg">—</div></div>
+        <div class="stat gold"><div class="k">Meilleur</div><div class="v" id="sBest">—</div></div>
+      </div>
+      <div style="text-align:center;margin:6px 0 16px">
+        <button class="btn btn-primary" style="font-size:1.1rem;padding:15px 32px" onclick="show('choose');renderChooser()">Commencer un test</button>
+      </div>
+      <div class="panel">
+        <h3>Ma progression</h3>
+        <div id="spaceChart"></div>
+      </div>
+      <div class="panel">
+        <h3>Mes derniers tests</h3>
+        <ul class="histlist" id="spaceHist"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHOIX DU TEST -->
+  <section class="screen" id="scr-choose">
+    <div class="card">
+      <div class="topbar">
+        <h2 class="title" style="margin:0">Choisis ton test</h2>
+        <button class="btn-link" onclick="ouvrirEspace()">Mon espace</button>
+      </div>
+      <p class="lead">Sélectionne l'exercice que tu veux faire aujourd'hui.</p>
+      <div class="choices" id="testChoices"></div>
+    </div>
+  </section>
+
+  <!-- CHOIX DU MODE -->
+  <section class="screen" id="scr-mode">
+    <div class="card">
+      <div class="topbar">
+        <h2 class="title" style="margin:0" id="modeTitle">Test</h2>
+        <button class="btn-link" onclick="show('choose');renderChooser()">Retour</button>
+      </div>
+      <p class="lead">Comment veux-tu faire ce test ?</p>
+      <div class="choices" id="modeChoices"></div>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section class="screen" id="scr-test">
+    <div class="test-top">
+      <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap"><span id="modeTagCm"></span><span class="q-idx" id="qIdx">Question 1 / 10</span></span>
+      <span class="score-tag">Score&nbsp;<b id="liveScore">0</b></span>
+    </div>
+    <div class="ardoise"><div class="equation" id="equation">— — —</div></div>
+    <div class="answer-zone">
+      <input class="answer-input" id="answerInput" inputmode="numeric" placeholder="?" autocomplete="off">
+      <div class="expr-help" id="exprHelp" hidden>
+        <button type="button" onclick="exprIns('x')">x</button>
+        <button type="button" onclick="exprIns('x²')">x²</button>
+        <button type="button" onclick="exprIns('x³')">x³</button>
+        <button type="button" onclick="exprIns('^')">xⁿ</button>
+        <button type="button" onclick="exprIns('(')">(</button>
+        <button type="button" onclick="exprIns(')')">)</button>
+        <button type="button" class="del" onclick="exprDel()">⌫</button>
+      </div>
+      <span class="mark" id="mark"></span>
+      <div class="timerbar" id="timerBar" hidden><i id="timerFill"></i></div>
+      <div class="correction" id="correction"></div>
+      <button class="btn btn-primary" id="validateBtn" onclick="submitAnswer()">Valider</button>
+    </div>
+  </section>
+
+  <!-- RÉSULTATS -->
+  <section class="screen" id="scr-results">
+    <div class="card">
+      <div class="result-head">
+        <h2 id="resultMsg">Bravo !</h2>
+        <p id="resultSub"></p>
+      </div>
+      <div class="score-circle">
+        <svg viewBox="0 0 170 130" aria-hidden="true"><ellipse class="ring" cx="85" cy="65" rx="74" ry="52" transform="rotate(-4 85 65)"/></svg>
+        <div class="val"><span class="big" id="resultScore">0 / 10</span><span class="pct" id="resultPct">0 %</span></div>
+      </div>
+      <ul class="review" id="review"></ul>
+      <div class="row" style="margin-top:22px;justify-content:center">
+        <button class="btn btn-primary" onclick="restartCurrentTest()">Recommencer</button>
+        <button class="btn btn-ghost" onclick="show('choose');renderChooser()">Autre test</button>
+        <button class="btn btn-ghost" onclick="ouvrirEspace()">Mon espace</button>
+      </div>
+      <p class="note" style="text-align:center">Ce test a été ajouté à ton historique.</p>
+    </div>
+  </section>
+
+  <!-- CONNEXION PROF -->
+  <section class="screen" id="scr-teacher-login">
+    <div class="card">
+      <h2 class="title">Espace professeur</h2>
+      <p class="lead">Entre le mot de passe pour accéder au tableau de bord.</p>
+      <div class="field">
+        <label class="lab" for="teacherPass">Mot de passe</label>
+        <input class="text-input" id="teacherPass" type="password" autocomplete="off">
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" onclick="teacherLogin()">Entrer</button>
+        <button class="btn-link" onclick="show('home')">Retour</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLEAU DE BORD PROF -->
+  <section class="screen" id="scr-teacher">
+    <div class="card">
+      <div class="topbar">
+        <h2 class="title" style="margin:0">Tableau de bord</h2>
+        <button class="btn-link" onclick="quitToHome()">Quitter</button>
+      </div>
+      <div class="tabs">
+        <button class="tab on" data-tab="results" onclick="teacherTab('results')">Suivi de la classe</button>
+        <button class="tab" data-tab="eval" onclick="teacherTab('eval')">Mode évaluation</button>
+        <button class="tab" data-tab="students" onclick="teacherTab('students')">Comptes élèves</button>
+        <button class="tab" data-tab="settings" onclick="teacherTab('settings')">Réglages des tests</button>
+      </div>
+
+      <!-- suivi -->
+      <div class="tpane on" id="pane-results">
+        <div class="seg" id="modeSeg" style="margin-bottom:16px">
+          <button id="segEval" class="on" onclick="setTeacherMode('eval')">Évaluations</button>
+          <button id="segTrain" onclick="setTeacherMode('train')">Entraînements</button>
+          <button id="segSoutien" onclick="setTeacherMode('soutien')">Soutien</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="k">Élèves</div><div class="v" id="stCount">0</div></div>
+          <div class="stat"><div class="k" id="stTestsK">Évaluations</div><div class="v" id="stTests">0</div></div>
+          <div class="stat green"><div class="k" id="stAvgK">Moyenne classe</div><div class="v" id="stAvg">—</div></div>
+        </div>
+        <div id="testBreakdown"></div>
+        <div class="chips" id="testFilter" style="margin:6px 0 14px"></div>
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <span class="muted" style="font-size:.9rem">Clique sur un élève pour voir le détail.</span>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Exporter en CSV</button>
+        </div>
+        <div id="classTableWrap"></div>
+        <div id="studentDetail"></div>
+      </div>
+
+      <!-- mode évaluation : verrous -->
+      <div class="tpane" id="pane-eval">
+        <p class="lead">Déverrouille un test pour l'évaluation en classe. Les élèves voient alors le mode « Évaluation ». Reverrouille-le après : seul l'entraînement reste accessible.</p>
+        <div id="lockList"></div>
+        <p class="note">L'entraînement reste toujours ouvert aux élèves, dans tous les cas.</p>
+      </div>
+
+      <!-- comptes -->
+      <div class="tpane" id="pane-students">
+        <label class="lab">Ajouter un élève</label>
+        <div class="add-form">
+          <input class="text-input" id="addPrenom" placeholder="Prénom" maxlength="24" autocomplete="off">
+          <input class="text-input" id="addPin" placeholder="Code (4 chiffres)" inputmode="numeric" maxlength="4" autocomplete="off">
+          <button class="btn btn-primary" onclick="addStudent()">Ajouter</button>
+        </div>
+        <ul class="roster" id="rosterList"></ul>
+        <div class="row" style="margin-top:6px">
+          <button class="btn btn-danger" onclick="resetYear()">Réinitialiser pour une nouvelle année</button>
+        </div>
+        <p class="note">« Réinitialiser » supprime tous les comptes et tout l'historique. À utiliser à la rentrée.</p>
+      </div>
+
+      <!-- réglages -->
+      <div class="tpane" id="pane-settings">
+        <div class="set-h first">Réglages des exercices</div>
+        <div class="setrow"><label for="setCount">Nombre de questions</label>
+          <select id="setCount"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>
+        <div class="setrow"><label for="setTime">Temps par question</label>
+          <select id="setTime"><option value="0">Sans limite</option><option value="10">10 s</option><option value="20">20 s</option><option value="30">30 s</option><option value="45">45 s</option><option value="60">60 s</option><option value="90">90 s</option></select></div>
+        <p class="note" style="margin:8px 0 0">Ces réglages s’appliquent aux deux exercices (Dérivées et Suites). Le mode Évaluation s’ouvre test par test dans l’onglet « Mode évaluation ».</p>
+        <div class="row" style="margin-top:18px">
+          <button class="btn btn-primary" onclick="saveSettings()">Enregistrer les réglages</button>
+          <span class="saved" id="savedMsg">Enregistré ✓</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast"></div>
+<button id="pauseBtn" hidden onclick="pauseTest()">⏸ Mettre en pause</button>
+
+<script>
+/* ---------- Raccourcis ---------- */
+const $=id=>document.getElementById(id);
+const val=id=>$(id).value;
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function initials(n){return (String(n).trim()[0]||'?').toUpperCase();}
+function fmtDur(s){s=Math.round(s||0);const m=Math.floor(s/60),sec=s%60;return m>0?`${m} min ${String(sec).padStart(2,'0')}`:`${sec} s`;}
+function fmtDurLong(s){s=Math.round(s||0);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;if(h>0)return `${h} h ${String(m).padStart(2,'0')} min`;if(m>0)return `${m} min ${String(sec).padStart(2,'0')}`;return `${sec} s`;}
+function fmtDate(ts){return new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+function pctClass(p){return p>=70?'hi':p>=50?'mid':'lo';}
+function toast(msg,type){const t=$('toast');t.textContent=msg;t.className='show'+(type?' '+type:'');clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2600);}
+
+/* ---------- État ---------- */
+const DEFAULT_CFG={count:10,secondsPerQuestion:0,locks:{}};
+let sb=null, currentEleve=null, selectedEleve=null, cfg=null;
+const test={kind:'cm',questions:[],idx:0,score:0,answers:[],startTime:0,qTimer:null,qDeadline:0,qTotal:0,fbTimer:null,locked:false};
+
+/* ---------- Registre des tests (ajouter un test = une ligne ici) ---------- */
+const TESTS={
+  'derivees': { name:'Dérivées',  icon:'📈', desc:'Dérive des polynômes et des monômes, puis écris l\u2019expression de f\u2009\u2032(x).', start:()=>startDerivees() },
+  'suites':   { name:'Suites',    icon:'🔢', desc:'Suites arithmétiques, géométriques et récurrentes : calcule le bon terme.', start:()=>startSuites() }
+};
+const TEST_ORDER=['derivees','suites'];
+/* Menu élève */
+const MENU=[
+  {kind:'test', id:'derivees'},
+  {kind:'test', id:'suites'}
+];
+let teacherFilter='all';
+let teacherMode='eval';
+let currentTestId=null, currentMode='train';
+function pick(a){return a[rand(0,a.length-1)];}
+function testIdOf(r){ const d=r&&r.details; if(d&&!Array.isArray(d)&&d.test) return d.test; return 'derivees'; }
+function modeOf(r){ const d=r&&r.details; if(d&&!Array.isArray(d)&&d.mode) return d.mode; return 'eval'; }
+function isPaused(r){ const d=r&&r.details; return !!(d&&!Array.isArray(d)&&d.state==='paused'); }
+function modeName(m){ return m==='train'?'Entraînement':(m==='soutien'?'Soutien':'Évaluation'); }
+function testName(id){ return (TESTS[id]&&TESTS[id].name) || (FRAC_INFO[id]?('Fractions — '+FRAC_INFO[id].name):'Test'); }
+function restartCurrentTest(){ const t=TESTS[currentTestId]; if(t&&t.start) t.start(); else startDerivees(); }
+function isSoutien(){ return currentMode==='soutien'; }
+function soutienAgain(fbId, actionsId, fn, host){
+  $(fbId).textContent='Presque ! Corrige les cases en rouge, puis revérifie.';
+  $(fbId).className='mp-feedback bad';
+  $(actionsId).innerHTML=`<button class="btn btn-primary" onclick="${fn}()">Revérifier</button>`;
+  if(host){ const bad=$(host)&&$(host).querySelector('.bad'); if(bad&&!bad.disabled)setTimeout(()=>bad.focus(),40); }
+}
+/* ---------- (soutien simplifié : géré directement dans submitAnswer) ---------- */
+function liveCheckCurrent(){ /* le moteur générique gère le soutien dans submitAnswer */ }
+function modeTagHTML(){
+  if(currentMode==='eval') return '<span class="mode-tag eval">🔓 Évaluation</span>';
+  if(currentMode==='soutien') return '<span class="mode-tag soutien">🛟 Soutien</span>';
+  return '<span class="mode-tag train">✏️ Entraînement</span>';
+}
+function cardHTML(icon,title,desc,onclick,extraClass,lockMsg){
+  return `<button class="choice eleve ${extraClass||''}" ${onclick?`onclick="${onclick}"`:'disabled'}>
+    <span class="ic">${icon}</span><span class="ttl">${esc(title)}</span><span class="ds">${esc(desc)}</span>${lockMsg?`<span class="lockmsg">${esc(lockMsg)}</span>`:''}</button>`;
+}
+function renderChooser(){
+  $('testChoices').innerHTML=MENU.map(m=>{ const t=TESTS[m.id]; return cardHTML(t.icon,t.name,t.desc,`openTest('${m.id}')`); }).join('');
+}
+let pausedRows={};
+function snapshotTest(){
+  const skip={qTimer:1,qDeadline:1,qTotal:1,fbTimer:1,locked:1,startTime:1,_boxes:1};
+  const snap={}; Object.keys(test).forEach(k=>{ if(!skip[k]) snap[k]=test[k]; }); return snap;
+}
+// lit ce que l'élève a déjà saisi dans les cases de la question en cours
+function captureBoxes(){
+  const scr=document.querySelector('.screen.on'); if(!scr) return {};
+  const m={}; scr.querySelectorAll('input[id]').forEach(el=>{ const v=el.value; if(v!=='') m[el.id]=v; }); return m;
+}
+// remet les saisies dans les cases après réaffichage de la question
+function restoreBoxes(boxes){
+  if(!boxes) return;
+  Object.keys(boxes).forEach(id=>{ const el=$(id); if(el && el.tagName==='INPUT'){ el.value=boxes[id]; } });
+}
+/* ---------- Enregistrement automatique du travail en cours (silencieux) ---------- */
+let recoveryRowId=null, recoveryBusy=false, recoveryDirty=false, recoveryClosed=false;
+function recoveryPayload(){
+  const elapsed=test.startTime?Math.round((Date.now()-test.startTime)/1000):0;
+  const details=Object.assign({test:currentTestId,mode:currentMode,state:'paused'}, snapshotTest());
+  details._boxes=captureBoxes();            // saisies en cours de la question affichée
+  const total=Array.isArray(test.questions)?test.questions.length:0;
+  return {eleve_id:currentEleve.id,score:test.score||0,total,percent:0,duration_sec:elapsed,details};
+}
+async function doRecoverySave(){
+  if(recoveryClosed || !currentEleve || !(currentMode==='train'||currentMode==='soutien')) return;
+  const payload=recoveryPayload();
+  if(recoveryRowId){
+    await sb.from('resultats').update(payload).eq('id',recoveryRowId);
+  } else {
+    const {data}=await sb.from('resultats').insert(payload).select('id').single();
+    if(data&&data.id){
+      if(recoveryClosed) sb.from('resultats').delete().eq('id',data.id).then(()=>{},()=>{}); // test terminé entre-temps : on annule le brouillon
+      else recoveryRowId=data.id;
+    }
+  }
+}
+// appelé après chaque réponse — ne bloque jamais l'élève, réessaie si une sauvegarde est déjà en cours
+function autoSave(){
+  if(recoveryClosed || !currentEleve || !(currentMode==='train'||currentMode==='soutien')) return;
+  if(recoveryBusy){ recoveryDirty=true; return; }
+  recoveryBusy=true;
+  doRecoverySave().catch(()=>{}).finally(()=>{ recoveryBusy=false; if(recoveryDirty && !recoveryClosed){ recoveryDirty=false; autoSave(); } });
+}
+// supprime le brouillon de reprise quand le test est terminé
+async function clearRecovery(){
+  recoveryClosed=true; recoveryDirty=false;
+  const id=recoveryRowId, tid=currentTestId, mode=currentMode, eid=currentEleve&&currentEleve.id;
+  recoveryRowId=null;
+  try{
+    if(id) await sb.from('resultats').delete().eq('id',id);
+    if(eid){ const {data}=await sb.from('resultats').select('id,details').eq('eleve_id',eid);
+      const old=(data||[]).filter(r=>r.details&&!Array.isArray(r.details)&&r.details.state==='paused'&&r.details.test===tid&&r.details.mode===mode);
+      for(const r of old){ await sb.from('resultats').delete().eq('id',r.id); } }
+  }catch(e){}
+}
+async function openTest(testId){
+  currentTestId=testId;
+  const t=TESTS[testId];
+  $('modeTitle').textContent=t.name;
+  $('modeChoices').innerHTML='<p class="muted">Chargement…</p>';
+  show('mode');
+  cfg=await loadConfig();
+  const unlocked=!!(cfg.locks && cfg.locks[testId]);
+  // chercher une session mise en pause pour ce test (entraînement / soutien)
+  pausedRows={};
+  try{
+    const {data}=await sb.from('resultats').select('*').eq('eleve_id',currentEleve.id);
+    (data||[]).forEach(r=>{ const d=r.details; if(d&&!Array.isArray(d)&&d.state==='paused'&&d.test===testId&&(d.mode==='train'||d.mode==='soutien')){ pausedRows[d.mode]=r; } });
+  }catch(e){}
+  const qnum=row=>((row&&row.details&&(row.details.idx||0))+1);
+  const trainCard = pausedRows.train
+    ? cardHTML('▶️','Reprendre l\u2019entraînement',`Tu t\u2019es arrêté à la question ${qnum(pausedRows.train)}. On continue !`,`resumeTest('train')`,'resume')
+    : cardHTML('✏️','M\u2019entraîner','Je m\u2019entraîne autant de fois que je veux.',`currentMode='train';TESTS['${testId}'].start()`);
+  const soutienCard = pausedRows.soutien
+    ? cardHTML('▶️','Reprendre le soutien',`Tu t\u2019es arrêté à la question ${qnum(pausedRows.soutien)}. On continue !`,`resumeTest('soutien')`,'resume')
+    : cardHTML('🛟','Mode soutien','À chaque étape, on me dit si c\u2019est juste ou faux, et je corrige jusqu\u2019à réussir.',`currentMode='soutien';TESTS['${testId}'].start()`);
+  const evalCard= unlocked
+    ? cardHTML('🔓','Évaluation','Mode noté, ouvert par le professeur.',`currentMode='eval';TESTS['${testId}'].start()`)
+    : cardHTML('🔒','Évaluation','','',`locked`,'Déverrouillé par le professeur pendant l\u2019évaluation.');
+  $('modeChoices').innerHTML=trainCard+soutienCard+evalCard;
+}
+async function pauseTest(){
+  if(!currentEleve || !(currentMode==='train'||currentMode==='soutien')) return;
+  clearTimeout(test.qTimer); clearTimeout(test.fbTimer);
+  $('pauseBtn').hidden=true;
+  try{ await doRecoverySave(); toast('Mis en pause — tu pourras reprendre plus tard ✓','ok'); }
+  catch(e){ toast('Pause non enregistrée (connexion)','err'); }
+  recoveryRowId=null;                       // le brouillon reste en base, retrouvé à la reprise
+  renderChooser(); show('choose');
+}
+async function resumeTest(mode){
+  const row=pausedRows&&pausedRows[mode];
+  const d=row&&row.details;
+  if(!d || !Array.isArray(d.questions) || !d.questions.length){ toast('Reprise impossible — on recommence.','err'); currentMode=mode; recoveryRowId=null; recoveryClosed=false; TESTS[currentTestId].start(); return; }
+  currentMode=mode; currentTestId=d.test;
+  clearTimeout(test.qTimer); clearTimeout(test.fbTimer);
+  Object.keys(test).forEach(k=>delete test[k]);
+  Object.assign(test,{kind:'cm',questions:[],idx:0,score:0,answers:[],startTime:0,qTimer:null,qDeadline:0,qTotal:0,fbTimer:null,locked:false});
+  const skip={state:1,test:1,mode:1,_boxes:1}; Object.keys(d).forEach(k=>{ if(!skip[k]) test[k]=d[k]; });
+  test.startTime=Date.now()-((row.duration_sec||0)*1000);
+  test.locked=false;
+  recoveryRowId=row.id; recoveryClosed=false; pausedRows[mode]=null;   // on réutilise cette ligne pour la suite de l'auto-enregistrement
+  const draft=d._boxes;          // saisies en cours à remettre dans les cases
+  show('test'); renderQuestion();
+  restoreBoxes(draft);   // et on recolore les cases déjà complètes
+}
+
+/* ---------- Connexion à Supabase ---------- */
+function configReady(){
+  return SUPABASE_URL && SUPABASE_ANON_KEY
+    && !SUPABASE_URL.includes('VOTRE-PROJET')
+    && !SUPABASE_ANON_KEY.includes('VOTRE-CLE')
+    && typeof window.supabase!=='undefined';
+}
+function initSupabase(){ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); }
+
+/* ---------- Navigation ---------- */
+function show(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  $('scr-'+name).classList.add('on');
+  const testScreens=['test','mtest','ftest','ptest','mdtest','utest','atest','dtest'];
+  const canPause = testScreens.includes(name) && (currentMode==='train'||currentMode==='soutien') && currentEleve;
+  $('pauseBtn').hidden=!canPause;
+  const pill=$('userPill');
+  if((name==='space'||name==='choose'||name==='mode'||name==='test'||name==='mtest'||name==='ftest'||name==='ptest'||name==='mdtest'||name==='utest'||name==='atest'||name==='dtest'||name==='results') && currentEleve){
+    pill.hidden=false;
+    pill.innerHTML=`${esc(currentEleve.prenom)} <button onclick="logout()">Se déconnecter</button>`;
+  }else if(name==='teacher'){
+    pill.hidden=false; pill.innerHTML=`Professeur <button onclick="quitToHome()">Quitter</button>`;
+  }else{ pill.hidden=true; }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function quitToHome(){ currentEleve=null; show('home'); }
+function logout(){ currentEleve=null; show('home'); }
+
+/* ---------- Connexion élève ---------- */
+function loginMode(m){
+  $('segCo').classList.toggle('on',m==='co');
+  $('segCr').classList.toggle('on',m==='cr');
+  $('modeCo').hidden=(m!=='co');
+  $('modeCr').hidden=(m!=='cr');
+}
+async function renderLoginNames(){
+  loginMode('co'); selectedEleve=null; $('pinRow').hidden=true;
+  const box=$('nameChips'); box.innerHTML='<span class="muted">Chargement…</span>';
+  try{
+    const {data,error}=await sb.from('eleves').select('*').order('prenom');
+    if(error)throw error;
+    if(!data.length){ box.innerHTML='<span class="muted">Aucun compte pour l\'instant. Crée le tien avec « Créer mon compte ».</span>'; return; }
+    box.innerHTML='';
+    data.forEach(e=>{
+      const b=document.createElement('button');
+      b.className='chip'; b.textContent=e.prenom;
+      b.onclick=()=>{ selectedEleve=e;
+        document.querySelectorAll('#nameChips .chip').forEach(c=>c.classList.remove('sel'));
+        b.classList.add('sel'); $('pinRow').hidden=false; $('loginPin').value=''; setTimeout(()=>$('loginPin').focus(),60);
+      };
+      box.appendChild(b);
+    });
+  }catch(e){ box.innerHTML='<span class="muted">Connexion impossible. Vérifie ta configuration.</span>'; }
+}
+async function connexionEleve(){
+  if(!selectedEleve){ toast('Choisis ton prénom'); return; }
+  const pin=val('loginPin').trim();
+  if(pin!==selectedEleve.pin){ toast('Code incorrect','err'); $('loginPin').value=''; $('loginPin').focus(); return; }
+  currentEleve=selectedEleve; await ouvrirEspace();
+}
+async function creerCompte(){
+  const prenom=val('newPrenom').trim(), pin=val('newPin').trim(), pin2=val('newPin2').trim();
+  if(!prenom){ toast('Écris ton prénom'); return; }
+  if(!/^\d{4}$/.test(pin)){ toast('Le code doit avoir 4 chiffres'); return; }
+  if(pin!==pin2){ toast('Les deux codes sont différents','err'); return; }
+  try{
+    const {data:exist}=await sb.from('eleves').select('id').ilike('prenom',prenom);
+    if(exist&&exist.length){ toast('Ce prénom existe déjà — connecte-toi','err'); return; }
+    const {data,error}=await sb.from('eleves').insert({prenom,pin}).select().single();
+    if(error)throw error;
+    currentEleve=data; toast('Compte créé !','ok');
+    $('newPrenom').value='';$('newPin').value='';$('newPin2').value='';
+    await ouvrirEspace();
+  }catch(e){ toast('Création impossible. Vérifie ta configuration.','err'); }
+}
+
+/* ---------- Espace élève ---------- */
+async function ouvrirEspace(){
+  $('spaceHello').textContent=`Bonjour, ${esc(currentEleve.prenom)} !`;
+  show('space');
+  $('sNb').textContent='…'; $('sAvg').textContent='…'; $('sBest').textContent='…';
+  $('spaceChart').innerHTML='<span class="muted">Chargement…</span>'; $('spaceHist').innerHTML='';
+  try{
+    const {data:all,error}=await sb.from('resultats').select('*').eq('eleve_id',currentEleve.id).order('created_at',{ascending:true});
+    if(error)throw error;
+    const data=(all||[]).filter(r=>!isPaused(r));
+    const n=data.length;
+    $('sNb').textContent=n;
+    $('spaceSub').textContent=n?`${n} test(s) cette année`:`Prêt pour ton premier test`;
+    if(n){
+      const avg=Math.round(data.reduce((s,r)=>s+r.percent,0)/n);
+      const best=Math.max(...data.map(r=>r.percent));
+      $('sAvg').textContent=avg+' %'; $('sBest').textContent=best+' %';
+    }else{ $('sAvg').textContent='—'; $('sBest').textContent='—'; }
+    $('spaceChart').innerHTML=lineChart(data.map(r=>r.percent));
+    const recent=[...data].reverse().slice(0,6);
+    $('spaceHist').innerHTML=recent.length?recent.map(r=>{
+      const m=modeOf(r), cls=m==='train'?'train':(m==='soutien'?'soutien':'eval'), lbl=m==='train'?'entraînement':(m==='soutien'?'soutien':'éval');
+      return `<li><span class="d">${fmtDate(r.created_at)} · ${esc(testName(testIdOf(r)))} <span class="mode-tag ${cls}" style="font-size:.7rem;padding:1px 7px">${lbl}</span></span>
+        <span class="sc">${r.score} / ${r.total}</span>
+        <span class="badge ${pctClass(r.percent)}">${r.percent} %</span></li>`; }).join('')
+      :'<li class="muted" style="border:none">Aucun test pour l\'instant.</li>';
+  }catch(e){ toast('Impossible de charger ton espace','err'); }
+}
+
+/* ---------- Petit graphique de progression (SVG) ---------- */
+function lineChart(values){
+  if(!values.length) return '<p class="muted">Fais un test pour voir ta courbe apparaître.</p>';
+  const W=320,H=120,pad=8, n=values.length;
+  const x=i=> n===1? W/2 : pad + i*(W-2*pad)/(n-1);
+  const y=v=> (H-pad) - (v/100)*(H-2*pad);
+  if(n===1){
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}"><circle cx="${x(0)}" cy="${y(values[0])}" r="5" fill="var(--blue)"/>
+      <text x="${W/2}" y="${y(values[0])-12}" text-anchor="middle" font-family="Fredoka" font-size="14" fill="var(--ink-soft)">${values[0]} %</text></svg>`;
+  }
+  const pts=values.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  const area=`${pad},${H-pad} ${pts} ${W-pad},${H-pad}`;
+  const dots=values.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="var(--blue)"/>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="aspect-ratio:${W}/${H}">
+    <line x1="${pad}" y1="${y(50)}" x2="${W-pad}" y2="${y(50)}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <polygon points="${area}" fill="var(--blue)" opacity="0.08"/>
+    <polyline points="${pts}" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}</svg>`;
+}
+
+/* ---------- Réglages : chargement ---------- */
+async function loadConfig(){
+  try{
+    const {data,error}=await sb.from('parametres').select('valeurs').eq('id',1).single();
+    if(error||!data) return {...DEFAULT_CFG};
+    return Object.assign({},DEFAULT_CFG,data.valeurs);
+  }catch(e){ return {...DEFAULT_CFG}; }
+}
+
+/* ---------- Génération des questions (Terminale) ---------- */
+/* Indices (u₀, uₙ) et exposants (x², x³) Unicode pour un affichage lisible sur mobile */
+const SUBD='\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089';
+const SUPD='\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079';
+function sub(n){ return String(n).split('').map(c=>c>='0'&&c<='9'?SUBD[+c]:c).join(''); }
+function supPow(n){ return String(n).split('').map(c=>c>='0'&&c<='9'?SUPD[+c]:c).join(''); }
+function pickNonZero(a,b){ let v; do{ v=rand(a,b); }while(v===0); return v; }
+
+/* Affichage d'un polynôme à partir de ses coefficients indexés par puissance.
+   coeffs[i] = coefficient de x^i.  Ex : [2,6] -> "6x + 2" */
+function polyToStr(coeffs){
+  let out='', first=true;
+  for(let p=coeffs.length-1;p>=0;p--){
+    const c=coeffs[p]; if(c===0) continue;
+    const abs=Math.abs(c);
+    const sign = first ? (c<0?'\u2212':'') : (c<0?' \u2212 ':' + ');
+    const coefPart = (abs===1 && p>0) ? '' : String(abs);
+    const varPart  = p===0 ? '' : (p===1 ? 'x' : 'x'+supPow(p));
+    out += sign + coefPart + varPart; first=false;
+  }
+  return first ? '0' : out;
+}
+function polyEval(coeffs,x){ let s=0; for(let p=0;p<coeffs.length;p++) s+=coeffs[p]*Math.pow(x,p); return s; }
+function polyDeriv(coeffs){ const d=[]; for(let p=1;p<coeffs.length;p++) d[p-1]=p*coeffs[p]; if(!d.length) d[0]=0; return d; }
+
+/* ====================== DÉRIVÉES ====================== */
+/* Question : { type:'expr', text, answer (chaîne f'), dcoef (coeffs de f' pour la validation) } */
+function genDeriv(){
+  const r=rand(1,3); let coeffs;
+  if(r===1){                                   // second degré : ax² + bx + c
+    coeffs=[ rand(-9,9), rand(-6,6), pickNonZero(1,6) ];
+  } else if(r===2){                            // troisième degré : ax³ + bx² + cx + d
+    coeffs=[ rand(-8,8), rand(-6,6), rand(-6,6), pickNonZero(1,5) ];
+  } else {                                     // monôme : a·x^n  (n de 2 à 5)
+    const n=rand(2,5), a=pickNonZero(2,7);
+    coeffs=Array(n+1).fill(0); coeffs[n]=a;
+  }
+  const d=polyDeriv(coeffs);
+  return { type:'expr', text:'f(x) = '+polyToStr(coeffs), answer:polyToStr(d), dcoef:d };
+}
+
+/* Validation d'une saisie par équivalence numérique en plusieurs points. */
+function checkExpr(raw, dcoef){
+  const f=compileExpr(raw); if(!f) return false;
+  const pts=[0.37,1.13,-1.5,2.71,-0.8,3.33];
+  for(const x of pts){
+    let v; try{ v=f(x); }catch(e){ return false; }
+    if(typeof v!=='number' || !isFinite(v)) return false;
+    const target=polyEval(dcoef,x);
+    if(Math.abs(v-target) > 1e-6*(1+Math.abs(target))) return false;
+  }
+  return true;
+}
+/* Transforme une saisie ("6x+2", "2x²", "3x^2-4x"…) en fonction JS sûre, ou null si invalide. */
+function compileExpr(raw){
+  let s=String(raw).toLowerCase().trim();
+  if(s==='') return null;
+  s=s.replace(/,/g,'.');
+  const sup='\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079';
+  s=s.replace(/[\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079]/g,c=>'^'+sup.indexOf(c));
+  s=s.replace(/\u2212/g,'-');
+  s=s.replace(/\s+/g,'');
+  s=s.replace(/(\d)x/g,'$1*x');
+  s=s.replace(/x(\d)/g,'x*$1');
+  s=s.replace(/\)\(/g,')*(');
+  s=s.replace(/(\d)\(/g,'$1*(');
+  s=s.replace(/\)([\dx])/g,')*$1');
+  s=s.replace(/x\(/g,'x*(');
+  s=s.replace(/\^/g,'**');
+  if(!/^[0-9x+\-*/().]*$/.test(s)) return null;
+  if(/\*\*\*/.test(s)) return null;
+  try{ return new Function('x','return ('+s+');'); }catch(e){ return null; }
+}
+
+/* ====================== SUITES ====================== */
+/* Question : { type:'num', text, answer (nombre) } */
+function genSuite(){
+  const r=rand(1,4);
+  if(r===1){                                   // terme d'une suite arithmétique
+    const u0=rand(-5,10), raison=pickNonZero(-6,7), n=rand(3,8);
+    return { type:'num', answer:u0+n*raison,
+      text:`Suite arithmétique : u\u2080 = ${u0} et raison r = ${raison}. Combien vaut u${sub(n)} ?` };
+  }
+  if(r===2){                                   // terme d'une suite géométrique
+    const u0=rand(1,5), q=rand(2,4), n=rand(2,5);
+    return { type:'num', answer:u0*Math.pow(q,n),
+      text:`Suite géométrique : u\u2080 = ${u0} et raison q = ${q}. Combien vaut u${sub(n)} ?` };
+  }
+  if(r===3){                                   // raison à partir de deux termes consécutifs
+    const raison=pickNonZero(-7,7), k=rand(1,5), uk=rand(-8,12);
+    return { type:'num', answer:raison,
+      text:`Suite arithmétique : u${sub(k)} = ${uk} et u${sub(k+1)} = ${uk+raison}. Quelle est la raison r ?` };
+  }
+  const a=rand(2,3), b=rand(-4,5), un=rand(0,6);     // suite récurrente
+  const bStr = b<0 ? `\u2212 ${Math.abs(b)}` : `+ ${b}`;
+  return { type:'num', answer:a*un+b,
+    text:`Suite définie par u\u2099\u208a\u2081 = ${a}\u00d7u\u2099 ${bStr}, avec u\u2099 = ${un}. Combien vaut u\u2099\u208a\u2081 ?` };
+}
+/* ---------- Déroulé du test ---------- */
+async function startSuites(){
+  if(!currentEleve){ show('login'); renderLoginNames(); return; }
+  recoveryRowId=null; recoveryClosed=false;
+  cfg=await loadConfig();
+  currentTestId='suites'; test.kind='gen';
+  test.questions=Array.from({length:cfg.count},genSuite);
+  test.idx=0;test.score=0;test.answers=[];test.startTime=Date.now();test.locked=false;
+  show('test'); renderQuestion();
+}
+async function startDerivees(){
+  if(!currentEleve){ show('login'); renderLoginNames(); return; }
+  recoveryRowId=null; recoveryClosed=false;
+  cfg=await loadConfig();
+  currentTestId='derivees'; test.kind='gen';
+  test.questions=Array.from({length:cfg.count},genDeriv);
+  test.idx=0;test.score=0;test.answers=[];test.startTime=Date.now();test.locked=false;
+  show('test'); renderQuestion();
+}
+function renderQuestion(){
+  clearTimeout(test.fbTimer);clearTimeout(test.qTimer);
+  const q=test.questions[test.idx]; test.locked=false;
+  $('qIdx').textContent=`Question ${test.idx+1} / ${test.questions.length}`;
+  $('modeTagCm').innerHTML=modeTagHTML();
+  $('liveScore').textContent=test.score;
+  const ai=$('answerInput'); ai.value='';ai.className='answer-input';ai.disabled=false;
+  const help=$('exprHelp');
+  if(q.type==='expr'){
+    $('equation').innerHTML=esc(q.text)+'<div class="ask">f\u2009\u2032(x) = ?</div>';
+    ai.inputMode='text'; ai.setAttribute('autocapitalize','none'); ai.setAttribute('autocorrect','off'); ai.spellcheck=false;
+    ai.placeholder='ex : 6x + 2';
+    if(help) help.hidden=false;
+  } else {
+    $('equation').innerHTML=esc(q.text);
+    ai.inputMode='numeric'; ai.removeAttribute('autocapitalize'); ai.placeholder='?';
+    if(help) help.hidden=true;
+  }
+  $('mark').className='mark';$('mark').textContent='';$('correction').textContent='';$('validateBtn').disabled=false;
+  setTimeout(()=>ai.focus(),60);
+  if(cfg.secondsPerQuestion>0 && !isSoutien()) startQTimer(cfg.secondsPerQuestion); else $('timerBar').hidden=true;
+}
+/* boutons d'aide à la saisie (insertion à la position du curseur) */
+function exprIns(t){
+  const ai=$('answerInput'); ai.focus();
+  const s=(ai.selectionStart==null?ai.value.length:ai.selectionStart);
+  const e=(ai.selectionEnd==null?ai.value.length:ai.selectionEnd);
+  ai.value=ai.value.slice(0,s)+t+ai.value.slice(e);
+  const pos=s+t.length; try{ai.setSelectionRange(pos,pos);}catch(_){}
+}
+function exprDel(){
+  const ai=$('answerInput'); ai.focus();
+  const s=ai.selectionStart, e=ai.selectionEnd;
+  if(s==null){ ai.value=ai.value.slice(0,-1); return; }
+  if(s===e && s>0){ ai.value=ai.value.slice(0,s-1)+ai.value.slice(e); try{ai.setSelectionRange(s-1,s-1);}catch(_){}}
+  else if(s!==e){ ai.value=ai.value.slice(0,s)+ai.value.slice(e); try{ai.setSelectionRange(s,s);}catch(_){}}
+}
+function startQTimer(sec){
+  const bar=$('timerBar'),fill=$('timerFill');
+  bar.hidden=false;bar.classList.remove('low');fill.style.transition='none';fill.style.width='100%';
+  test.qTotal=sec*1000;test.qDeadline=Date.now()+test.qTotal;
+  requestAnimationFrame(()=>{fill.style.transition='width .25s linear';tickTimer();});
+}
+function tickTimer(){
+  const left=test.qDeadline-Date.now(),fill=$('timerFill'),bar=$('timerBar');
+  const pct=Math.max(0,left/test.qTotal*100); fill.style.width=pct+'%';
+  if(pct<30)bar.classList.add('low');
+  if(left<=0){submitAnswer(true);return;}
+  test.qTimer=setTimeout(tickTimer,200);
+}
+function submitAnswer(timedOut){
+  if(test.locked)return;
+  const q=test.questions[test.idx],ai=$('answerInput'),raw=ai.value.trim();
+  let correct, given;
+  if(q.type==='expr'){
+    given = raw===''?null:raw;
+    correct = raw!=='' && checkExpr(raw,q.dcoef);
+  } else {
+    const num = raw===''?null:parseFloat(raw.replace(',','.'));
+    given = num;
+    correct = num!==null && !isNaN(num) && Math.abs(num-q.answer)<1e-9;
+  }
+  // mode soutien : si c'est faux, on le dit et on laisse reprendre
+  if(isSoutien() && !correct){
+    const mark=$('mark');mark.textContent='\u2717';mark.className='mark bad show';
+    ai.classList.remove('good');ai.classList.add('bad');
+    $('correction').textContent='Pas tout \u00e0 fait \u2014 corrige et rev\u00e9rifie.';
+    return;
+  }
+  test.locked=true; clearTimeout(test.qTimer);
+  ai.disabled=true;$('validateBtn').disabled=true;ai.classList.remove('bad');ai.classList.add(correct?'good':'bad');
+  const mark=$('mark');mark.textContent=correct?'\u2713':'\u2717';mark.className='mark '+(correct?'good':'bad')+' show';
+  if(correct){test.score++;$('liveScore').textContent=test.score;}
+  else{
+    const pre=(timedOut&&given===null)?'Temps \u00e9coul\u00e9 \u2014 ':'';
+    $('correction').innerHTML=pre+'R\u00e9ponse : '+(q.type==='expr'?'f\u2009\u2032(x) = ':'')+esc(String(q.answer));
+  }
+  test.answers.push({q:q.text,answer:q.answer,given,correct,type:q.type});
+  test.fbTimer=setTimeout(()=>{ if(test.idx<test.questions.length-1){test.idx++;renderQuestion();autoSave();} else finishTest(); },correct?850:1600);
+}
+async function finishTest(){
+  clearRecovery();
+  const total=test.questions.length,score=test.score,pct=Math.round(score/total*100);
+  const durationSec=(Date.now()-test.startTime)/1000;
+  const misses=test.answers.filter(a=>!a.correct).map(a=>({q:a.q,donne:a.given,bon:a.answer}));
+  try{
+    await sb.from('resultats').insert({eleve_id:currentEleve.id,score,total,percent:pct,duration_sec:durationSec,details:{test:currentTestId,mode:currentMode,misses}});
+  }catch(e){ toast('R\u00e9sultat non enregistr\u00e9 (connexion)','err'); }
+  showResults({score,total,percent:pct,durationSec});
+}
+function showResults(r){
+  const msg=r.percent>=90?'Excellent !':r.percent>=70?'Bravo !':r.percent>=50?'Bien jou\u00e9 !':'Continue, tu progresses !';
+  $('resultMsg').textContent=msg;
+  $('resultSub').textContent=`${esc(currentEleve.prenom)} \u2022 ${modeName(currentMode)} \u2022 ${fmtDur(r.durationSec)}`;
+  $('resultScore').textContent=`${r.score} / ${r.total}`;$('resultPct').textContent=`${r.percent} %`;
+  const ul=$('review');ul.innerHTML='';
+  test.answers.forEach(a=>{
+    const li=document.createElement('li');li.className=a.correct?'ok':'ko';
+    const given=(a.given===null||a.given==='')?'\u2205':esc(String(a.given));
+    let body, fix='';
+    if(a.type==='expr'){
+      body=`${esc(a.q)} \u2192 ${a.correct?esc(String(a.answer)):given}`;
+      if(!a.correct) fix=`<span class="fix">\u2192 ${esc(String(a.answer))}</span>`;
+    } else {
+      body=`${esc(a.q)} <b>${a.correct?esc(String(a.answer)):given}</b>`;
+      if(!a.correct) fix=`<span class="fix">\u2192 ${esc(String(a.answer))}</span>`;
+    }
+    li.innerHTML=`<span class="rmark">${a.correct?'\u2713':'\u2717'}</span><span class="exp">${body}</span>${fix}`;
+    ul.appendChild(li);
+  });
+  const ring=document.querySelector('.score-circle .ring');
+  if(ring){ring.style.animation='none';void ring.offsetWidth;ring.style.animation='';}
+  show('results');
+}
+/* ---------- Professeur ---------- */
+function teacherLogin(){
+  if(val('teacherPass')!==MOT_DE_PASSE_PROF){ toast('Mot de passe incorrect','err'); $('teacherPass').value=''; return; }
+  $('teacherPass').value=''; show('teacher'); loadSettingsIntoForm(); teacherTab('results');
+}
+function teacherTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===name));
+  document.querySelectorAll('.tpane').forEach(p=>p.classList.remove('on'));
+  $('pane-'+name).classList.add('on');
+  if(name==='results'){$('studentDetail').innerHTML='';renderClassTable();}
+  else if(name==='students')renderRoster();
+  else if(name==='eval')renderEvalLocks();
+}
+function setTeacherMode(m){ teacherMode=m; $('segEval').classList.toggle('on',m==='eval'); $('segTrain').classList.toggle('on',m==='train'); $('segSoutien').classList.toggle('on',m==='soutien'); $('studentDetail').innerHTML=''; renderClassTable(); }
+function setTeacherFilter(id){ teacherFilter=id; renderClassTable(); }
+async function renderClassTable(){
+  const wrap=$('classTableWrap'); wrap.innerHTML='<p class="muted">Chargement…</p>';
+  $('testBreakdown').innerHTML=''; $('testFilter').innerHTML='';
+  const isTrain=teacherMode==='train', isSout=teacherMode==='soutien', isEval=teacherMode==='eval';
+  $('stTestsK').textContent= isEval?'Évaluations':(isSout?'Séances de soutien':'Entraînements');
+  $('stAvgK').textContent= isSout?'Temps total':'Moyenne classe';
+  const sumDur=l=>l.reduce((s,r)=>s+(r.duration_sec||0),0);
+  try{
+    const [{data:eleves,error:e1},{data:resAll,error:e2}]=await Promise.all([
+      sb.from('eleves').select('*').order('prenom'),
+      sb.from('resultats').select('*')
+    ]);
+    if(e1)throw e1; if(e2)throw e2;
+    const res=resAll.filter(r=>!isPaused(r)&&modeOf(r)===teacherMode);
+    $('stCount').textContent=eleves.length;
+    $('stTests').textContent=res.length;
+    $('stAvg').textContent= isSout ? (res.length?fmtDurLong(sumDur(res)):'—') : (res.length?Math.round(res.reduce((s,r)=>s+r.percent,0)/res.length)+' %':'—');
+
+    // vue d'ensemble par test (selon le mode)
+    const bd=TEST_ORDER.map(id=>{
+      const list=res.filter(r=>testIdOf(r)===id);
+      const noun=isEval?'test':(isSout?'séance':'entraînement');
+      const right = isSout
+        ? `<span class="badge ${list.length?'mid':''}">${list.length?fmtDurLong(sumDur(list)):'—'}</span>`
+        : (()=>{ const avg=list.length?Math.round(list.reduce((s,r)=>s+r.percent,0)/list.length):null; return `<span class="badge ${avg===null?'':pctClass(avg)}">${avg===null?'—':avg+' %'}</span>`; })();
+      return `<li><span style="font-weight:700">${esc(testName(id))}</span>
+        <span class="sc">${list.length} ${noun}${list.length>1?'s':''}</span>${right}</li>`;
+    }).join('');
+    const bdTitle=isEval?'Vue d\'ensemble par test':(isSout?'Temps de soutien par test':'Entraînements par test');
+    $('testBreakdown').innerHTML=`<div class="panel"><h3>${bdTitle}</h3><ul class="histlist">${bd}</ul></div>`;
+
+    // filtre par test
+    const chips=[{id:'all',name:'Tous les tests'}].concat(TEST_ORDER.map(id=>({id,name:testName(id)})));
+    $('testFilter').innerHTML=chips.map(c=>`<button class="chip ${teacherFilter===c.id?'sel':''}" onclick="setTeacherFilter('${c.id}')">${esc(c.name)}</button>`).join('');
+
+    if(!eleves.length){ wrap.innerHTML='<div class="empty">Aucun compte élève. Ajoute-les dans « Comptes élèves » ou laisse-les créer le leur.</div>'; return; }
+
+    const fres=teacherFilter==='all'?res:res.filter(r=>testIdOf(r)===teacherFilter);
+    const byId={}; fres.forEach(r=>{(byId[r.eleve_id]=byId[r.eleve_id]||[]).push(r);});
+    let head, rows;
+    if(isSout){
+      head='<tr><th>Élève</th><th>Séances</th><th>Temps total</th><th>Temps moyen</th><th>Dernière</th></tr>';
+      rows=eleves.map(e=>{
+        const list=(byId[e.id]||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+        if(!list.length) return `<tr class="clickable" onclick="showStudentDetail('${e.id}','${esc(e.prenom)}')"><td class="name">${esc(e.prenom)}</td><td class="muted">0</td><td class="muted">—</td><td class="muted">—</td><td class="muted">jamais</td></tr>`;
+        const tot=sumDur(list), moy=tot/list.length, last=list[list.length-1];
+        return `<tr class="clickable" onclick="showStudentDetail('${e.id}','${esc(e.prenom)}')"><td class="name">${esc(e.prenom)}</td><td><b>${list.length}</b></td><td><b>${fmtDurLong(tot)}</b></td><td>${fmtDur(moy)}</td><td>${fmtDate(last.created_at)}</td></tr>`;
+      }).join('');
+    } else if(isTrain){
+      head='<tr><th>Élève</th><th>Entraînements</th><th>Moyenne</th><th>Dernier</th></tr>';
+      rows=eleves.map(e=>{
+        const list=(byId[e.id]||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+        if(!list.length) return `<tr class="clickable" onclick="showStudentDetail('${e.id}','${esc(e.prenom)}')"><td class="name">${esc(e.prenom)}</td><td class="muted">0</td><td>—</td><td class="muted">jamais</td></tr>`;
+        const avg=Math.round(list.reduce((s,r)=>s+r.percent,0)/list.length), last=list[list.length-1];
+        return `<tr class="clickable" onclick="showStudentDetail('${e.id}','${esc(e.prenom)}')"><td class="name">${esc(e.prenom)}</td><td><b>${list.length}</b></td><td><span class="badge ${pctClass(avg)}">${avg} %</span></td><td>${fmtDate(last.created_at)}</td></tr>`;
+      }).join('');
+    } else {
+      head='<tr><th>Élève</th><th>Évaluations</th><th>Moyenne</th><th>Meilleur</th><th>Dernier</th></tr>';
+      rows=eleves.map(e=>{
+        const list=(byId[e.id]||[]).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+        if(!list.length) return `<tr class="clickable" onclick="showStudentDetail('${e.id}','${esc(e.prenom)}')"><td class="name">${esc(e.prenom)}</td><td class="muted">0</td><td>—</td><td>—</td><td class="muted">jamais</td></tr>`;
+        const avg=Math.round(list.reduce((s,r)=>s+r.percent,0)/list.length), best=Math.max(...list.map(r=>r.percent)), last=list[list.length-1];
+        return `<tr class="clickable" onclick="showStudentDetail('${e.id}','${esc(e.prenom)}')"><td class="name">${esc(e.prenom)}</td><td>${list.length}</td><td><span class="badge ${pctClass(avg)}">${avg} %</span></td><td>${best} %</td><td>${fmtDate(last.created_at)}</td></tr>`;
+      }).join('');
+    }
+    const flabel=teacherFilter==='all'?'tous les tests':('« '+testName(teacherFilter)+' »');
+    const lead=isEval?'Évaluations':(isSout?'Soutien — temps de travail':'Entraînements');
+    wrap.innerHTML=`<p class="muted" style="font-size:.85rem;margin:0 0 8px">${lead} · ${esc(flabel)} — clique sur un élève pour le détail.</p>
+      <table class="tbl"><thead>${head}</thead><tbody>${rows}</tbody></table>`;
+  }catch(e){ wrap.innerHTML='<div class="empty">Connexion impossible. Vérifie la configuration.</div>'; }
+}
+
+/* ---------- Mode évaluation : verrous ---------- */
+function saveConfig(valeurs){ return sb.from('parametres').upsert({id:1,valeurs}); }
+async function renderEvalLocks(){
+  const box=$('lockList'); box.innerHTML='<p class="muted">Chargement…</p>';
+  try{
+    cfg=await loadConfig(); const locks=cfg.locks||{};
+    box.innerHTML=TEST_ORDER.map(id=>{
+      const open=!!locks[id];
+      return `<div class="lock-card ${open?'open':''}">
+        <span class="li">${esc(testName(id))}</span>
+        <span class="st ${open?'open':'closed'}">${open?'🔓 Déverrouillé':'🔒 Verrouillé'}</span>
+        <button class="btn ${open?'btn-danger':'btn-primary'} btn-sm" onclick="toggleLock('${id}')">${open?'Verrouiller':'Déverrouiller'}</button>
+      </div>`;
+    }).join('');
+  }catch(e){ box.innerHTML='<div class="empty">Connexion impossible.</div>'; }
+}
+async function toggleLock(id){
+  try{
+    cfg=await loadConfig();
+    const locks=Object.assign({},cfg.locks||{}); locks[id]=!locks[id];
+    const {error}=await saveConfig(Object.assign({},cfg,{locks})); if(error)throw error;
+    toast(locks[id]?`${testName(id)} déverrouillé`:`${testName(id)} verrouillé`, locks[id]?'ok':null);
+    renderEvalLocks();
+  }catch(e){ toast('Action impossible','err'); }
+}
+async function showStudentDetail(id,prenom){
+  const box=$('studentDetail'); box.innerHTML='<div class="panel"><span class="muted">Chargement…</span></div>';
+  const isTrain=teacherMode==='train', isSout=teacherMode==='soutien';
+  const label=isSout?'soutien':(isTrain?'entraînements':'évaluations');
+  try{
+    const {data:all,error}=await sb.from('resultats').select('*').eq('eleve_id',id).order('created_at',{ascending:true});
+    if(error)throw error;
+    const data=all.filter(r=>!isPaused(r)&&modeOf(r)===teacherMode);
+    let inner=`<div class="panel"><div class="topbar"><h3 style="margin:0">${esc(prenom)} · ${label}</h3>
+      <button class="btn-link" onclick="$('studentDetail').innerHTML=''">Fermer</button></div>`;
+    if(!data.length){ inner+=`<p class="muted">Aucune ${isSout?'séance de soutien':(isTrain?'séance d\'entraînement':'évaluation')} pour l'instant.</p></div>`; box.innerHTML=inner; return; }
+    if(isSout){
+      const tot=data.reduce((s,r)=>s+(r.duration_sec||0),0);
+      inner+=`<p class="muted" style="margin:0 0 10px">${data.length} séance(s) · temps total <b style="color:var(--ink)">${fmtDurLong(tot)}</b> · moyenne ${fmtDur(tot/data.length)}</p>`;
+      const rows=[...data].reverse().map(r=>`<li><span class="d">${fmtDate(r.created_at)} · ${esc(testName(testIdOf(r)))}</span>
+        <span class="badge mid">${fmtDur(r.duration_sec)}</span></li>`).join('');
+      inner+=`<ul class="histlist">${rows}</ul></div>`;
+    } else {
+      inner+=lineChart(data.map(r=>r.percent));
+      const rows=[...data].reverse().map(r=>`<li><span class="d">${fmtDate(r.created_at)} · ${esc(testName(testIdOf(r)))}</span>
+        <span class="sc">${r.score} / ${r.total}</span><span class="badge ${pctClass(r.percent)}">${r.percent} %</span>
+        <span class="d" style="margin-left:8px">${fmtDur(r.duration_sec)}</span></li>`).join('');
+      inner+=`<ul class="histlist" style="margin-top:14px">${rows}</ul></div>`;
+    }
+    box.innerHTML=inner; box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(e){ box.innerHTML='<div class="panel"><span class="muted">Erreur de chargement.</span></div>'; }
+}
+
+/* comptes */
+async function renderRoster(){
+  const ul=$('rosterList'); ul.innerHTML='<li class="muted" style="border:none">Chargement…</li>';
+  try{
+    const {data,error}=await sb.from('eleves').select('*').order('prenom');
+    if(error)throw error;
+    if(!data.length){ ul.innerHTML='<div class="empty">Aucun compte pour l\'instant.</div>'; return; }
+    ul.innerHTML=data.map(e=>`<li>
+      <span class="av">${esc(initials(e.prenom))}</span>
+      <span class="nm">${esc(e.prenom)}</span>
+      <span class="code">code : ${esc(e.pin)}</span>
+      <span class="acts">
+        <button class="btn btn-ghost btn-sm" onclick="resetPin('${e.id}','${esc(e.prenom)}')">Nouveau code</button>
+        <button class="btn btn-danger btn-sm" onclick="removeStudent('${e.id}','${esc(e.prenom)}')">Retirer</button>
+      </span></li>`).join('');
+  }catch(e){ ul.innerHTML='<div class="empty">Connexion impossible.</div>'; }
+}
+async function addStudent(){
+  const prenom=val('addPrenom').trim(),pin=val('addPin').trim();
+  if(!prenom){ toast('Écris un prénom'); return; }
+  if(!/^\d{4}$/.test(pin)){ toast('Le code doit avoir 4 chiffres'); return; }
+  try{
+    const {data:exist}=await sb.from('eleves').select('id').ilike('prenom',prenom);
+    if(exist&&exist.length){ toast('Ce prénom existe déjà','err'); return; }
+    const {error}=await sb.from('eleves').insert({prenom,pin}); if(error)throw error;
+    $('addPrenom').value='';$('addPin').value=''; toast('Élève ajouté','ok'); renderRoster();
+  }catch(e){ toast('Ajout impossible','err'); }
+}
+async function resetPin(id,prenom){
+  const np=prompt(`Nouveau code à 4 chiffres pour ${prenom} :`);
+  if(np===null)return;
+  if(!/^\d{4}$/.test(np.trim())){ toast('Le code doit avoir 4 chiffres','err'); return; }
+  try{ const {error}=await sb.from('eleves').update({pin:np.trim()}).eq('id',id); if(error)throw error;
+    toast('Code mis à jour','ok'); renderRoster();
+  }catch(e){ toast('Échec de la mise à jour','err'); }
+}
+async function removeStudent(id,prenom){
+  if(!confirm(`Retirer ${prenom} et tout son historique ? Cette action est définitive.`))return;
+  try{ const {error}=await sb.from('eleves').delete().eq('id',id); if(error)throw error;
+    toast('Élève retiré','ok'); renderRoster();
+  }catch(e){ toast('Suppression impossible','err'); }
+}
+async function resetYear(){
+  if(!confirm('Supprimer TOUS les comptes et TOUT l\'historique ? À ne faire qu\'à la rentrée.'))return;
+  if(!confirm('Confirmer la suppression définitive de toute la classe ?'))return;
+  try{
+    await sb.from('resultats').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    await sb.from('eleves').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    toast('Classe réinitialisée','ok'); renderRoster();
+  }catch(e){ toast('Réinitialisation impossible','err'); }
+}
+
+/* réglages */
+async function loadSettingsIntoForm(){
+  const c=await loadConfig();
+  $('setCount').value=String(c.count);$('setTime').value=String(c.secondsPerQuestion);
+}
+async function saveSettings(){
+  const valeurs={
+    count:parseInt(val('setCount'),10)||10, secondsPerQuestion:parseInt(val('setTime'),10)||0
+  };
+  try{
+    const cur=await loadConfig(); valeurs.locks=cur.locks||{};
+    const {error}=await sb.from('parametres').upsert({id:1,valeurs}); if(error)throw error;
+    const m=$('savedMsg');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),1800);
+  }catch(e){ toast('Enregistrement impossible','err'); }
+}
+
+/* export CSV */
+async function exportCSV(){
+  try{
+    const {data:rawCsv,error}=await sb.from('resultats').select('*, eleves(prenom)').order('created_at',{ascending:true});
+    if(error)throw error;
+    const data=(rawCsv||[]).filter(r=>!isPaused(r));
+    if(!data.length){ toast('Aucun résultat à exporter'); return; }
+    const head=['Eleve','Test','Mode','Score','Total','Pourcentage','Duree (s)','Date'];
+    const lines=data.map(r=>[
+      (r.eleves&&r.eleves.prenom)||'?', testName(testIdOf(r)), modeName(modeOf(r)), r.score, r.total, r.percent,
+      Math.round(r.duration_sec||0), new Date(r.created_at).toLocaleString('fr-FR')
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+    const csv='\uFEFF'+[head.join(','),...lines].join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='tests-resultats.csv';a.click();URL.revokeObjectURL(a.href);
+  }catch(e){ toast('Export impossible','err'); }
+}
+
+/* clavier */
+$('answerInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitAnswer();}});
+/* mode soutien : couleur immédiate case par case */
+/* (plus de coloration case-par-case : le moteur générique gère le feedback) */
+/* enregistrement différé du travail en cours (entraînement & soutien) : protège même en cas de fermeture/plantage */
+let _draftSaveTimer=null;
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(!currentEleve||!(currentMode==='train'||currentMode==='soutien')||!t||t.tagName!=='INPUT'||!t.closest('.screen.on')) return;
+  clearTimeout(_draftSaveTimer); _draftSaveTimer=setTimeout(autoSave,1200);
+});
+$('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();connexionEleve();}});
+$('teacherPass').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();teacherLogin();}});
+$('newPin2').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();creerCompte();}});
+
+/* démarrage */
+if(configReady()){ initSupabase(); show('home'); }
+else { show('setup'); }
+</script>
