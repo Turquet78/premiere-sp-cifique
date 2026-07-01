@@ -545,6 +545,9 @@
           <span class="ds">Je gère les comptes et je suis la progression.</span>
         </button>
       </div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn btn-ghost" onclick="ouvrirDevoirs()">📌 Devoirs à la maison</button>
+      </div>
     </div>
   </section>
 
@@ -603,8 +606,9 @@
         <div class="stat green"><div class="k">Moyenne</div><div class="v" id="sAvg">—</div></div>
         <div class="stat gold"><div class="k">Meilleur</div><div class="v" id="sBest">—</div></div>
       </div>
-      <div style="text-align:center;margin:6px 0 16px">
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 16px">
         <button class="btn btn-primary" style="font-size:1.1rem;padding:15px 32px" onclick="show('choose');renderChooser()">Commencer un test</button>
+        <button class="btn btn-ghost" style="font-size:1.05rem;padding:15px 26px" onclick="ouvrirDevoirs()">📌 Devoirs à la maison</button>
       </div>
       <div class="panel">
         <h3>Ma progression</h3>
@@ -1090,6 +1094,9 @@ function lancerDevoir(devoirId, id, mode){
   currentTestId=id;
   t.start();
 }
+/* Ouvre la page « Devoirs à la maison » du portail (adresse à ajuster si besoin). */
+const PAGE_DEVOIRS_URL='https://turquet78.github.io/#/terminale/devoirs';
+function ouvrirDevoirs(){ window.open(PAGE_DEVOIRS_URL,'_blank','noopener'); }
 async function renderDM(results){
   const host=$('dmPanel'); if(!host) return;
   let devoirs;
@@ -1218,7 +1225,8 @@ async function pauseTest(){
   try{ await doRecoverySave(); toast('Mis en pause — tu pourras reprendre plus tard ✓','ok'); }
   catch(e){ toast('Pause non enregistrée (connexion)','err'); }
   recoveryRowId=null;                       // le brouillon reste en base, retrouvé à la reprise
-  renderChooser(); show('choose');
+  if(currentDM){ currentDM=null; ouvrirEspace(); }   // devoir : retour sur « Mon espace »
+  else { renderChooser(); show('choose'); }
 }
 async function abandonTest(){
   if(!currentEleve) return;
@@ -1227,7 +1235,8 @@ async function abandonTest(){
   $('testCtrls').hidden=true;
   try{ await clearRecovery(); }catch(e){}
   toast('Exercice abandonné','ok');
-  renderChooser(); show('choose');
+  if(currentDM){ currentDM=null; ouvrirEspace(); }   // devoir : retour sur « Mon espace »
+  else { renderChooser(); show('choose'); }
 }
 async function resumeTest(mode){
   const row=pausedRows&&pausedRows[mode];
